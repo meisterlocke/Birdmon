@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Birdmon",
+    "slug": "birdmon",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#2D6A4F",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.birdmon.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Birdmon braucht deinen Standort, um Tiere in deiner Umgebung zu entdecken.",
+        "NSCameraUsageDescription": "Birdmon nutzt die Kamera für den AR-Scanner, um Tiere in der Natur zu dokumentieren."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#2D6A4F"
+      },
+      "package": "com.birdmon.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Birdmon braucht deinen Standort, um Tiere in deiner Umgebung zu entdecken."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Birdmon nutzt die Kamera für den AR-Scanner."
+        }
+      ]
+    ]
+  }
+}
