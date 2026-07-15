@@ -1,93 +1,82 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
-import { Platform, View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MapScreen } from '../screens/MapScreen';
 import { CollectionScreen } from '../screens/CollectionScreen';
 import { CameraScreen } from '../screens/CameraScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { colors, fontSize } from '../utils/theme';
 
-const Tab = createBottomTabNavigator();
+type Tab = 'map' | 'camera' | 'collection' | 'profile';
 
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
+const TABS: { key: Tab; emoji: string; label: string }[] = [
+  { key: 'map', emoji: '🗺️', label: 'Karte' },
+  { key: 'camera', emoji: '📸', label: 'Scanner' },
+  { key: 'collection', emoji: '📖', label: 'Sammlung' },
+  { key: 'profile', emoji: '👤', label: 'Profil' },
+];
+
+export function AppNavigator() {
+  const [activeTab, setActiveTab] = useState<Tab>('map');
+
   return (
-    <View style={styles.tabIcon}>
-      <Text style={[styles.tabEmoji, focused && styles.tabEmojiActive]}>{emoji}</Text>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
+    <View style={styles.container}>
+      <View style={styles.screen}>
+        {activeTab === 'map' && <MapScreen />}
+        {activeTab === 'camera' && <CameraScreen />}
+        {activeTab === 'collection' && <CollectionScreen />}
+        {activeTab === 'profile' && <ProfileScreen />}
+      </View>
+
+      <SafeAreaView edges={['bottom']} style={styles.tabBar}>
+        {TABS.map(tab => {
+          const active = activeTab === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={styles.tabItem}
+              onPress={() => setActiveTab(tab.key)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabEmoji, !active && styles.tabInactive]}>
+                {tab.emoji}
+              </Text>
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </SafeAreaView>
     </View>
   );
 }
 
-export function AppNavigator() {
-  return (
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: '#FFF',
-            borderTopWidth: 1,
-            borderTopColor: colors.border,
-            height: Platform.OS === 'ios' ? 85 : 65,
-            paddingBottom: Platform.OS === 'ios' ? 25 : 8,
-            paddingTop: 8,
-          },
-          tabBarShowLabel: false,
-        }}
-      >
-        <Tab.Screen
-          name="Map"
-          component={MapScreen}
-          options={{
-            tabBarIcon: ({ focused }) => (
-              <TabIcon emoji="🗺️" label="Karte" focused={focused} />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Camera"
-          component={CameraScreen}
-          options={{
-            tabBarIcon: ({ focused }) => (
-              <TabIcon emoji="📸" label="Scanner" focused={focused} />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Collection"
-          component={CollectionScreen}
-          options={{
-            tabBarIcon: ({ focused }) => (
-              <TabIcon emoji="📖" label="Sammlung" focused={focused} />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            tabBarIcon: ({ focused }) => (
-              <TabIcon emoji="👤" label="Profil" focused={focused} />
-            ),
-          }}
-        />
-      </Tab.Navigator>
-    </NavigationContainer>
-  );
-}
-
 const styles = StyleSheet.create({
-  tabIcon: {
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  screen: {
+    flex: 1,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 8,
+  },
+  tabItem: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingBottom: 4,
   },
   tabEmoji: {
     fontSize: 22,
-    opacity: 0.5,
   },
-  tabEmojiActive: {
-    opacity: 1,
+  tabInactive: {
+    opacity: 0.4,
   },
   tabLabel: {
     fontSize: fontSize.xs,
@@ -97,6 +86,5 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     color: colors.primary,
-    fontWeight: '700',
   },
 });
