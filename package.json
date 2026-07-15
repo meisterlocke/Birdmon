@@ -4,19 +4,20 @@
   "main": "index.ts",
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.24.0",
-    "expo": "~54.0.35",
-    "expo-camera": "~16.1.11",
-    "expo-haptics": "~14.1.4",
-    "expo-linear-gradient": "~14.1.5",
-    "expo-location": "~18.1.6",
-    "expo-status-bar": "~2.2.3",
-    "react": "18.3.1",
-    "react-native": "0.79.7",
+    "expo": "~56.0.16",
+    "expo-camera": "~56.0.8",
+    "expo-haptics": "~56.0.3",
+    "expo-linear-gradient": "~56.0.4",
+    "expo-location": "~56.0.21",
+    "expo-sensors": "~56.0.6",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.0.0",
+    "react-native": "0.81.4",
     "react-native-safe-area-context": "5.8.0"
   },
   "devDependencies": {
-    "@types/react": "~18.3.12",
-    "typescript": "~5.3.3"
+    "@types/react": "~19.0.0",
+    "typescript": "~5.8.3"
   },
   "scripts": {
     "start": "expo start",
