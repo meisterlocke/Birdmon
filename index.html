@@ -9,248 +9,249 @@
 <title>Birdmon – Entdecke die Natur</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  :root {
-    --green: #2D6A4F; --green-light: #40916C; --green-pale: #E8F5E9;
-    --accent: #F59E0B; --surface: #fff; --text: #1B4332; --text2: #52796F;
-    --border: #D4E6DC; --radius: 12px;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--green-pale); color: var(--text); height: 100dvh;
-    display: flex; flex-direction: column; overflow: hidden; }
+:root {
+  --green:#2D6A4F; --green-light:#40916C; --green-pale:#E8F5E9;
+  --accent:#F59E0B; --surface:#fff; --text:#1B4332; --text2:#52796F;
+  --border:#D4E6DC; --radius:12px;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--green-pale);color:var(--text);height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#app{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
 
-  #app { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-  .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-  .screen.active { display: flex; }
+/* TAB BAR */
+#tabbar{display:flex;background:#fff;border-top:1px solid var(--border);padding-bottom:var(--safe-bottom);padding-top:6px;flex-shrink:0;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:4px 0 6px;cursor:pointer;border:none;background:none;font-size:9px;color:#aaa;font-weight:600;gap:2px;transition:color .15s;position:relative}
+.tab.active{color:var(--green)}
+.tab span:first-child{font-size:22px;line-height:1}
+.tab.active::after{content:'';position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--green)}
 
-  #tabbar { display: flex; background: #fff; border-top: 1px solid var(--border);
-    padding-bottom: var(--safe-bottom); padding-top: 6px; flex-shrink: 0; }
-  .tab { flex: 1; display: flex; flex-direction: column; align-items: center;
-    padding: 4px 0 6px; cursor: pointer; border: none; background: none;
-    font-size: 9px; color: #aaa; font-weight: 600; gap: 2px; transition: color .15s; }
-  .tab.active { color: var(--green); }
-  .tab span:first-child { font-size: 22px; line-height: 1; }
+/* MAP */
+#map-screen{position:relative}
+.hud{display:flex;gap:8px;padding:10px 12px;padding-top:calc(var(--safe-top) + 10px);position:absolute;top:0;left:0;right:0;z-index:1000;pointer-events:none}
+.hud-card{background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;padding:8px 12px;box-shadow:0 2px 12px rgba(0,0,0,.15);pointer-events:all;border:1px solid rgba(255,255,255,.6)}
+.hud-level{font-size:18px;font-weight:800;color:var(--green)}
+.xp-bar{height:5px;background:var(--border);border-radius:3px;margin-top:4px;width:100px}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--green-light),var(--accent));border-radius:3px;transition:width .3s}
+.xp-txt{font-size:10px;color:var(--text2);margin-top:2px}
+#map-area{flex:1;position:relative}
+.map-btn{position:absolute;bottom:24px;right:16px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green-light),var(--green));border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;z-index:1000}
+.coords{position:absolute;bottom:24px;left:16px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--text2);z-index:1000;box-shadow:0 1px 4px rgba(0,0,0,.15);max-width:60vw}
 
-  /* MAP SCREEN */
-  #map-screen { position: relative; }
-  .hud { display: flex; gap: 8px; padding: 10px 12px;
-    padding-top: calc(var(--safe-top) + 10px);
-    position: absolute; top: 0; left: 0; right: 0; z-index: 1000; pointer-events: none; }
-  .hud-card { background: rgba(255,255,255,.95); border-radius: 10px;
-    padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,.15); pointer-events: all; }
-  .hud-level { font-size: 18px; font-weight: 800; color: var(--green); }
-  .xp-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; width: 100px; }
-  .xp-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
-  .xp-txt { font-size: 10px; color: var(--text2); margin-top: 2px; }
-  #map-area { flex: 1; position: relative; }
-  .map-btn { position: absolute; bottom: 24px; right: 16px; width: 52px; height: 52px;
-    border-radius: 50%; background: var(--green); border: none; font-size: 22px;
-    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); display: flex;
-    align-items: center; justify-content: center; z-index: 1000; }
-  .coords { position: absolute; bottom: 24px; left: 16px; background: rgba(255,255,255,.92);
-    border-radius: 8px; padding: 6px 10px; font-size: 10px; color: var(--text2); z-index: 1000;
-    box-shadow: 0 1px 4px rgba(0,0,0,.15); max-width: 60vw; }
+/* MAP MARKERS */
+.player-dot-map{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--green-light),var(--green));border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:22px;animation:pulse-player 2s infinite}
+@keyframes pulse-player{0%{box-shadow:0 0 0 0 rgba(45,106,79,.5)}70%{box-shadow:0 0 0 14px rgba(45,106,79,0)}100%{box-shadow:0 0 0 0 rgba(45,106,79,0)}}
+.spawn-tip{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.spawn-circle-map{width:48px;height:48px;border-radius:50%;background:#fff;border:3px solid;display:flex;align-items:center;justify-content:center;font-size:24px;animation:bounce-map 2s ease-in-out infinite}
+.spawn-circle-map.glow-uncommon{box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 10px rgba(74,144,217,.5)}
+.spawn-circle-map.glow-rare{box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 16px rgba(168,85,247,.65)}
+.spawn-circle-map.glow-very_rare{animation:bounce-map 2s ease-in-out infinite,glow-vr 1.5s ease-in-out infinite alternate}
+.spawn-circle-map.glow-legendary{animation:bounce-map 1.6s ease-in-out infinite,glow-legend 1s ease-in-out infinite alternate}
+@keyframes bounce-map{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes glow-vr{from{box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 12px rgba(245,158,11,.4)}to{box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 24px rgba(245,158,11,.85)}}
+@keyframes glow-legend{from{box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 18px rgba(239,68,68,.5),0 0 36px rgba(239,68,68,.2)}to{box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 30px rgba(239,68,68,.9),0 0 60px rgba(239,68,68,.4)}}
+.spawn-lbl-map{font-size:9px;font-weight:700;color:#fff;padding:2px 6px;border-radius:6px;margin-top:2px;white-space:nowrap}
+.spawn-dist-map{font-size:9px;color:#333;font-weight:600;background:rgba(255,255,255,.9);padding:1px 5px;border-radius:4px;margin-top:1px}
+.leaflet-div-icon{background:none;border:none}
 
-  /* Leaflet marker styles */
-  .player-marker-wrap { width: 44px; height: 44px; }
-  .player-dot-map { width: 44px; height: 44px; border-radius: 50%;
-    background: var(--green); border: 3px solid #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 22px;
-    box-shadow: 0 0 0 0 rgba(45,106,79,.5);
-    animation: pulse-player 2s infinite; }
-  @keyframes pulse-player {
-    0% { box-shadow: 0 0 0 0 rgba(45,106,79,.5); }
-    70% { box-shadow: 0 0 0 14px rgba(45,106,79,0); }
-    100% { box-shadow: 0 0 0 0 rgba(45,106,79,0); }
-  }
-  .spawn-tip { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-  .spawn-circle-map { width: 48px; height: 48px; border-radius: 50%; background: #fff;
-    border: 3px solid; display: flex; align-items: center; justify-content: center;
-    font-size: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.25);
-    animation: bounce-map 2s ease-in-out infinite; }
-  @keyframes bounce-map { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-  .spawn-lbl-map { font-size: 9px; font-weight: 700; color: #fff; padding: 2px 6px;
-    border-radius: 6px; margin-top: 2px; white-space: nowrap; }
-  .spawn-dist-map { font-size: 9px; color: #333; font-weight: 600;
-    background: rgba(255,255,255,.9); padding: 1px 5px; border-radius: 4px; margin-top: 1px; }
-  .leaflet-div-icon { background: none; border: none; }
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:2000;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:480px;overflow:hidden;animation:slide-up .35s cubic-bezier(.34,1.56,.64,1);max-height:92dvh;overflow-y:auto}
+@keyframes slide-up{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:40px;height:4px;background:rgba(0,0,0,.12);border-radius:2px;margin:10px auto 0}
+.modal-header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:relative;overflow:hidden}
+.modal-header::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.12)}
+.modal-header .rarity{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1px}
+.modal-header .cat{font-size:11px;color:rgba(255,255,255,.85);font-weight:600}
+.modal-body{padding:16px 20px 24px;display:flex;flex-direction:column;align-items:center}
+.modal-emoji{font-size:72px;margin-bottom:10px;animation:wobble 3s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-5deg) scale(1)}50%{transform:rotate(5deg) scale(1.05)}}
+.modal-name{font-size:24px;font-weight:800;color:var(--text);text-align:center}
+.modal-sci{font-size:14px;font-style:italic;color:var(--text2);margin-bottom:12px}
+.modal-desc{font-size:14px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:12px}
+.stats-row{display:flex;gap:8px;width:100%;margin-bottom:12px}
+.stat-box{flex:1;background:var(--green-pale);border-radius:10px;padding:8px}
+.stat-box .lbl{font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:2px}
+.stat-box .val{font-size:13px;color:var(--text);font-weight:600}
+.fun-fact{display:flex;gap:8px;background:#FFF9E6;border-radius:10px;padding:12px;margin-bottom:16px;width:100%}
+.fun-fact p{font-size:13px;color:#92400E;line-height:1.5}
+.btn-catch{width:100%;padding:15px;border-radius:50px;border:none;font-size:16px;font-weight:700;color:#fff;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:transform .1s,box-shadow .1s}
+.btn-catch:active{transform:scale(.97);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.btn-close{background:none;border:none;color:#aaa;font-size:14px;cursor:pointer;padding:4px}
+.result-box{text-align:center;width:100%}
+.new-disc{background:linear-gradient(135deg,#FEF3C7,#FDE68A);padding:8px 20px;border-radius:50px;font-size:16px;font-weight:700;color:#92400E;display:inline-block;margin-bottom:8px}
+.xp-gained{font-size:32px;font-weight:800;color:#27AE60;margin-bottom:4px}
+.ach-txt{font-size:14px;color:var(--accent);font-weight:600;margin-bottom:12px}
+.btn-continue{width:100%;padding:14px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--green-light),var(--green));font-size:16px;font-weight:700;color:#fff;cursor:pointer}
 
-  /* Modal */
-  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6);
-    z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-  .modal-bg.open { display: flex; }
-  .modal { background: #fff; border-radius: 20px; width: 100%; max-width: 380px;
-    overflow: hidden; animation: pop .3s cubic-bezier(.34,1.56,.64,1); }
-  @keyframes pop { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
-  .modal-header { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
-  .modal-header .rarity { font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
-  .modal-header .cat { font-size: 11px; color: rgba(255,255,255,.8); font-weight: 600; }
-  .modal-body { padding: 20px; display: flex; flex-direction: column; align-items: center; }
-  .modal-emoji { font-size: 72px; margin-bottom: 12px; animation: wobble 3s ease-in-out infinite; }
-  @keyframes wobble { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
-  .modal-name { font-size: 24px; font-weight: 800; color: var(--text); text-align: center; }
-  .modal-sci { font-size: 14px; font-style: italic; color: var(--text2); margin-bottom: 12px; }
-  .modal-desc { font-size: 14px; color: var(--text2); text-align: center; line-height: 1.6; margin-bottom: 12px; }
-  .stats-row { display: flex; gap: 8px; width: 100%; margin-bottom: 12px; }
-  .stat-box { flex: 1; background: var(--green-pale); border-radius: 10px; padding: 8px; }
-  .stat-box .lbl { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
-  .stat-box .val { font-size: 13px; color: var(--text); font-weight: 600; }
-  .fun-fact { display: flex; gap: 8px; background: #FFF9E6; border-radius: 10px; padding: 12px; margin-bottom: 16px; width: 100%; }
-  .fun-fact p { font-size: 13px; color: #92400E; line-height: 1.5; }
-  .btn-catch { width: 100%; padding: 14px; border-radius: 50px; border: none;
-    font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; margin-bottom: 8px; }
-  .btn-close { background: none; border: none; color: #aaa; font-size: 14px; cursor: pointer; padding: 4px; }
-  .result-box { text-align: center; width: 100%; }
-  .new-disc { background: #FEF3C7; padding: 8px 20px; border-radius: 50px;
-    font-size: 16px; font-weight: 700; color: #92400E; display: inline-block; margin-bottom: 8px; }
-  .xp-gained { font-size: 28px; font-weight: 800; color: #27AE60; margin-bottom: 4px; }
-  .ach-txt { font-size: 14px; color: var(--accent); font-weight: 600; margin-bottom: 12px; }
-  .btn-continue { width: 100%; padding: 14px; border-radius: 50px; border: none;
-    background: var(--green); font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; }
+/* CATCH OVERLAY */
+.catch-overlay{display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px}
+.catch-overlay.open{display:flex}
+.catch-container{width:100%;max-width:380px;background:#0f2318;border-radius:24px;padding:20px;animation:pop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.catch-header-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.catch-ov-emoji{font-size:36px}
+.catch-ov-name{font-size:18px;font-weight:800;color:#fff}
+.catch-instruction{font-size:13px;color:rgba(255,255,255,.65);margin-top:2px}
+.catch-arena{position:relative;height:200px;background:#1a3325;border-radius:16px;overflow:hidden;margin-bottom:12px;border:1px solid rgba(255,255,255,.08)}
+.catch-emoji-elem{position:absolute;font-size:52px;cursor:pointer;transition:left .42s cubic-bezier(.34,1.56,.64,1),top .42s cubic-bezier(.34,1.56,.64,1);user-select:none;line-height:1;z-index:2}
+.catch-emoji-elem:active{transform:scale(.8)}
+.catch-timer-wrap{height:8px;background:rgba(255,255,255,.1);border-radius:4px;margin-bottom:12px;overflow:hidden}
+.catch-timer-bar{height:100%;background:linear-gradient(90deg,#52B788,#F59E0B,#EF4444);background-size:200%;border-radius:4px;transition:width .1s linear}
+.catch-timer-bar.urgent{animation:pulse-bar .4s ease-in-out infinite alternate}
+@keyframes pulse-bar{from{opacity:.7}to{opacity:1}}
+.catch-dots{display:flex;justify-content:center;gap:8px;margin-bottom:14px}
+.catch-dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.25);transition:all .2s}
+.catch-dot.filled{background:#F59E0B;border-color:#F59E0B;box-shadow:0 0 10px rgba(245,158,11,.6);transform:scale(1.25)}
+.btn-skip{width:100%;background:none;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.55);border-radius:50px;padding:10px;font-size:14px;cursor:pointer}
 
-  /* Collection */
-  #coll-screen { overflow: hidden; }
-  .coll-header { background: var(--green); padding: 16px; padding-top: calc(var(--safe-top) + 16px); flex-shrink: 0; }
-  .coll-title { font-size: 22px; font-weight: 800; color: #fff; }
-  .coll-sub { font-size: 14px; color: rgba(255,255,255,.8); margin-top: 2px; }
-  .coll-prog { height: 6px; background: rgba(255,255,255,.2); border-radius: 3px; margin-top: 8px; }
-  .coll-prog-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .5s; }
-  .filter-bar { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
-  .filter-bar::-webkit-scrollbar { display: none; }
-  .filter-chip { display: flex; align-items: center; gap: 4px; padding: 6px 14px;
-    border-radius: 50px; border: 1px solid var(--border); background: #fff;
-    font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer;
-    white-space: nowrap; transition: all .15s; flex-shrink: 0; }
-  .filter-chip.active { background: var(--green); border-color: var(--green); color: #fff; }
-  .animal-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 8px; overflow-y: auto; flex: 1; }
-  .animal-card { background: #fff; border-radius: 12px; padding: 10px 8px;
-    display: flex; flex-direction: column; align-items: center; cursor: pointer;
-    position: relative; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); transition: transform .1s; }
-  .animal-card:active { transform: scale(.96); }
-  .animal-card.undiscovered { opacity: .55; background: #f5f5f5; }
-  .rarity-stripe { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-  .card-emoji { font-size: 32px; margin: 6px 0 4px; }
-  .card-name { font-size: 10px; font-weight: 700; color: var(--text); text-align: center; line-height: 1.3; }
-  .card-seen { font-size: 9px; color: var(--text2); margin-top: 2px; }
+/* LEVEL UP OVERLAY */
+#levelup-overlay{display:none;position:fixed;inset:0;background:linear-gradient(160deg,rgba(45,106,79,.97),rgba(27,67,50,.99));z-index:4000;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px}
+#levelup-overlay.show{display:flex;animation:pop .5s cubic-bezier(.34,1.56,.64,1)}
+.levelup-star{font-size:80px;animation:rock 1s ease-in-out infinite}
+@keyframes rock{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.1)}}
+.levelup-label{font-size:14px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:3px;text-transform:uppercase;margin-top:20px}
+.levelup-num{font-size:72px;font-weight:900;color:#fff;line-height:1}
+.levelup-sub{font-size:16px;color:rgba(255,255,255,.65);margin-top:8px}
 
-  /* Detail view */
-  #detail-view { display: none; position: fixed; inset: 0; background: var(--green-pale);
-    z-index: 1500; flex-direction: column; overflow-y: auto; }
-  #detail-view.open { display: flex; }
-  .detail-back { background: var(--green); padding: 12px 16px;
-    padding-top: calc(var(--safe-top) + 12px); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
-  .detail-hero { padding: 24px 20px 16px; display: flex; flex-direction: column; align-items: center; }
-  .detail-emoji { font-size: 80px; margin-bottom: 12px; }
-  .detail-name { font-size: 28px; font-weight: 800; color: var(--text); text-align: center; }
-  .detail-sci { font-size: 14px; font-style: italic; color: var(--text2); }
-  .detail-body { padding: 0 16px 32px; }
-  .detail-desc { font-size: 16px; color: var(--text); line-height: 1.6; margin-bottom: 16px; }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-  .info-card { background: #fff; border-radius: 10px; padding: 10px 12px; }
-  .info-lbl { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; margin-bottom: 3px; }
-  .info-val { font-size: 13px; color: var(--text); font-weight: 600; }
-  .section-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
-  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-  .tag { background: var(--green-pale); padding: 4px 12px; border-radius: 50px; font-size: 12px; color: var(--green); font-weight: 600; }
-  .hint-box { background: #fff; border-radius: 10px; padding: 14px; }
-  .hint-txt { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
+/* COLLECTION */
+#coll-screen{overflow:hidden}
+.coll-header{background:linear-gradient(135deg,var(--green),var(--green-light));padding:16px;padding-top:calc(var(--safe-top) + 16px);flex-shrink:0}
+.coll-title{font-size:22px;font-weight:800;color:#fff}
+.coll-sub{font-size:14px;color:rgba(255,255,255,.8);margin-top:2px}
+.coll-prog{height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:8px}
+.coll-prog-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .5s}
+.filter-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{display:flex;align-items:center;gap:4px;padding:6px 14px;border-radius:50px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.filter-chip.active{background:var(--green);border-color:var(--green);color:#fff}
+.animal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px;overflow-y:auto;flex:1}
+.animal-card{background:#fff;border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:transform .1s}
+.animal-card:active{transform:scale(.96)}
+.animal-card.undiscovered{opacity:.5;background:#f5f5f5}
+.animal-card.rar-legendary:not(.undiscovered){background:linear-gradient(135deg,#fff5f5,#fff);box-shadow:0 2px 12px rgba(239,68,68,.18)}
+.animal-card.rar-legendary:not(.undiscovered)::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(239,68,68,.1),transparent);animation:shimmer 2.5s infinite}
+@keyframes shimmer{to{left:200%}}
+.animal-card.rar-very_rare:not(.undiscovered){box-shadow:0 2px 12px rgba(245,158,11,.18)}
+.rarity-stripe{position:absolute;top:0;left:0;right:0;height:3px}
+.card-emoji{font-size:32px;margin:6px 0 4px}
+.card-name{font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.3}
+.card-seen{font-size:9px;color:var(--text2);margin-top:2px}
+.card-new-badge{position:absolute;top:6px;right:4px;background:#EF4444;color:#fff;font-size:7px;font-weight:700;padding:1px 4px;border-radius:4px;line-height:1.4}
 
-  /* Camera */
-  #cam-screen { position: relative; background: #000; }
-  #camera-video { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; display: none; }
-  .cam-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; pointer-events: none; z-index: 5; }
-  .scan-line { position: absolute; left: 0; right: 0; height: 2px;
-    background: rgba(82,183,136,.7); box-shadow: 0 0 10px rgba(82,183,136,.8);
-    animation: scan 3s linear infinite; }
-  @keyframes scan { 0%{top:0} 100%{top:100%} }
-  .cam-top { padding: 16px; padding-top: calc(var(--safe-top) + 16px);
-    background: rgba(0,0,0,.5); text-align: center; flex-shrink: 0; }
-  .cam-title { color: #fff; font-size: 17px; font-weight: 700; }
-  .cam-sub { color: rgba(82,183,136,1); font-size: 13px; font-weight: 600; margin-top: 2px; }
-  .ar-animals { position: absolute; inset: 0; pointer-events: none; }
-  .ar-animal { position: absolute; display: flex; flex-direction: column;
-    align-items: center; cursor: pointer; pointer-events: all; }
-  .ar-circle { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.9);
-    border: 3px solid; display: flex; align-items: center; justify-content: center;
-    font-size: 26px; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
-  .ar-lbl { font-size: 10px; font-weight: 700; color: #fff; padding: 2px 8px;
-    border-radius: 6px; margin-top: 4px; white-space: nowrap; }
-  .no-animals-msg { position: absolute; bottom: 120px; left: 20px; right: 20px;
-    background: rgba(0,0,0,.6); border-radius: 14px; padding: 16px; text-align: center; }
-  .no-animals-msg p { color: #fff; font-size: 14px; line-height: 1.5; }
-  /* Permission screen sits on top of everything */
-  .cam-perm { position: absolute; inset: 0; z-index: 10; background: var(--green-pale);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 40px 24px; text-align: center; }
-  .cam-perm-emoji { font-size: 60px; margin-bottom: 16px; }
-  .cam-perm h2 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-  .cam-perm p { font-size: 15px; color: var(--text2); line-height: 1.6; margin-bottom: 24px; }
-  .btn-perm { background: var(--green); color: #fff; border: none; padding: 14px 32px;
-    border-radius: 50px; font-size: 16px; font-weight: 700; cursor: pointer; }
+/* DETAIL VIEW */
+#detail-view{display:none;position:fixed;inset:0;background:var(--green-pale);z-index:1500;flex-direction:column;overflow-y:auto}
+#detail-view.open{display:flex}
+.detail-back{background:linear-gradient(135deg,var(--green),var(--green-light));padding:12px 16px;padding-top:calc(var(--safe-top) + 12px);color:#fff;font-size:16px;font-weight:600;cursor:pointer;flex-shrink:0}
+.detail-hero{padding:24px 20px 16px;display:flex;flex-direction:column;align-items:center}
+.detail-emoji{font-size:80px;margin-bottom:12px}
+.detail-name{font-size:28px;font-weight:800;color:var(--text);text-align:center}
+.detail-sci{font-size:14px;font-style:italic;color:var(--text2)}
+.detail-body{padding:0 16px 32px}
+.detail-desc{font-size:16px;color:var(--text);line-height:1.6;margin-bottom:16px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.info-card{background:#fff;border-radius:10px;padding:10px 12px}
+.info-lbl{font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;margin-bottom:3px}
+.info-val{font-size:13px;color:var(--text);font-weight:600}
+.section-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tag{background:var(--green-pale);padding:4px 12px;border-radius:50px;font-size:12px;color:var(--green);font-weight:600}
+.hint-box{background:#fff;border-radius:10px;padding:14px}
+.hint-txt{font-size:14px;color:var(--text2);margin-bottom:6px}
 
-  /* Profile */
-  #prof-scroll { overflow-y: auto; flex: 1; }
-  .prof-header { background: var(--green); padding: 20px 16px; padding-top: calc(var(--safe-top) + 20px); text-align: center; }
-  .prof-avatar { width: 80px; height: 80px; border-radius: 50%;
-    background: rgba(255,255,255,.2); border: 3px solid rgba(255,255,255,.5);
-    display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 12px; }
-  .prof-name { font-size: 22px; font-weight: 800; color: #fff; }
-  .prof-date { font-size: 13px; color: rgba(255,255,255,.7); margin-top: 4px; }
-  .card-section { background: #fff; border-radius: 14px; margin: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-  .level-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .level-lbl { font-size: 14px; color: var(--text2); font-weight: 600; }
-  .level-val { font-size: 32px; font-weight: 800; color: var(--green); }
-  .xp-bar2 { height: 8px; background: var(--border); border-radius: 4px; margin-bottom: 8px; }
-  .xp-fill2 { height: 100%; background: var(--accent); border-radius: 4px; transition: width .5s; }
-  .xp-row { display: flex; justify-content: space-between; }
-  .xp-row span { font-size: 12px; }
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stat-tile { background: #fff; border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-  .stat-icon { font-size: 28px; margin-bottom: 4px; }
-  .stat-num { font-size: 22px; font-weight: 800; color: var(--text); }
-  .stat-sub { font-size: 10px; color: var(--text2); font-weight: 600; margin-top: 2px; }
-  .cat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .cat-emoji { font-size: 22px; width: 28px; text-align: center; flex-shrink: 0; }
-  .cat-info { flex: 1; }
-  .cat-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
-  .cat-name { font-size: 14px; font-weight: 600; color: var(--text); }
-  .cat-count { font-size: 13px; color: var(--text2); }
-  .cat-bar { height: 6px; background: var(--border); border-radius: 3px; }
-  .cat-fill { height: 100%; background: #52B788; border-radius: 3px; transition: width .5s; }
-  .ach-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .ach-row:last-child { border-bottom: none; }
-  .ach-row.locked { opacity: .45; }
-  .ach-icon { font-size: 24px; width: 32px; text-align: center; flex-shrink: 0; }
-  .ach-info { flex: 1; }
-  .ach-name { font-size: 14px; font-weight: 700; color: var(--text); }
-  .ach-desc { font-size: 12px; color: var(--text2); }
+/* CAMERA */
+#cam-screen{position:relative;background:#000}
+#camera-video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none}
+.cam-overlay{position:absolute;inset:0;display:flex;flex-direction:column;pointer-events:none;z-index:5}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(82,183,136,.85),transparent);box-shadow:0 0 12px rgba(82,183,136,.9);animation:scan 3s linear infinite}
+@keyframes scan{0%{top:0}100%{top:100%}}
+.cam-top{padding:16px;padding-top:calc(var(--safe-top) + 16px);background:linear-gradient(to bottom,rgba(0,0,0,.65),transparent);text-align:center;flex-shrink:0}
+.cam-title{color:#fff;font-size:17px;font-weight:700}
+.cam-sub{color:#52B788;font-size:13px;font-weight:600;margin-top:2px}
+.ar-animals{position:absolute;inset:0;pointer-events:none}
+.ar-animal{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:pointer;pointer-events:all}
+.ar-circle{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.95);border:3px solid;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 3px 12px rgba(0,0,0,.4);animation:ar-float 2s ease-in-out infinite}
+@keyframes ar-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ar-lbl{font-size:10px;font-weight:700;color:#fff;padding:3px 10px;border-radius:8px;margin-top:4px;white-space:nowrap}
+.ar-dist{font-size:9px;color:rgba(255,255,255,.75);font-weight:600;margin-top:2px}
+.no-animals-msg{position:absolute;bottom:120px;left:20px;right:20px;background:rgba(0,0,0,.7);border-radius:14px;padding:16px;text-align:center;backdrop-filter:blur(4px)}
+.no-animals-msg p{color:rgba(255,255,255,.9);font-size:14px;line-height:1.5}
+.cam-perm{position:absolute;inset:0;z-index:10;background:var(--green-pale);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+.cam-perm-emoji{font-size:60px;margin-bottom:16px}
+.cam-perm h2{font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px}
+.cam-perm p{font-size:15px;color:var(--text2);line-height:1.6;margin-bottom:24px}
+.btn-perm{background:linear-gradient(135deg,var(--green-light),var(--green));color:#fff;border:none;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(45,106,79,.4)}
 
-  /* Toast */
-  #toast { position: fixed; top: calc(var(--safe-top) + 16px); left: 50%;
-    transform: translateX(-50%) translateY(-100px); background: var(--green);
-    color: #fff; padding: 10px 20px; border-radius: 50px; font-size: 14px;
-    font-weight: 600; z-index: 3000; transition: transform .3s; white-space: nowrap;
-    box-shadow: 0 4px 16px rgba(0,0,0,.2); }
-  #toast.show { transform: translateX(-50%) translateY(0); }
+/* PROFILE */
+#prof-scroll{overflow-y:auto;flex:1}
+.prof-header{background:linear-gradient(160deg,var(--green) 0%,var(--green-light) 60%,#52B788 100%);padding:20px 16px;padding-top:calc(var(--safe-top) + 20px);text-align:center;position:relative;overflow:hidden}
+.prof-header::before{content:'🌿';position:absolute;font-size:130px;opacity:.07;top:-20px;right:-10px;pointer-events:none}
+.prof-avatar{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 12px}
+.prof-name{font-size:22px;font-weight:800;color:#fff}
+.prof-date{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+.card-section{background:#fff;border-radius:14px;margin:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.streak-section{background:linear-gradient(135deg,#FFFBEB,#FFF9E6);border:1px solid #FDE68A}
+.level-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.level-lbl{font-size:14px;color:var(--text2);font-weight:600}
+.level-val{font-size:32px;font-weight:800;color:var(--green)}
+.xp-bar2{height:8px;background:var(--border);border-radius:4px;margin-bottom:8px}
+.xp-fill2{height:100%;background:linear-gradient(90deg,var(--green-light),var(--accent));border-radius:4px;transition:width .5s}
+.xp-row{display:flex;justify-content:space-between}
+.xp-row span{font-size:12px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-tile{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.stat-icon{font-size:28px;margin-bottom:4px}
+.stat-num{font-size:22px;font-weight:800;color:var(--text)}
+.stat-sub{font-size:10px;color:var(--text2);font-weight:600;margin-top:2px}
+.cat-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cat-emoji{font-size:22px;width:28px;text-align:center;flex-shrink:0}
+.cat-info{flex:1}
+.cat-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.cat-name{font-size:14px;font-weight:600;color:var(--text)}
+.cat-count{font-size:13px;color:var(--text2)}
+.cat-bar{height:6px;background:var(--border);border-radius:3px}
+.cat-fill{height:100%;background:linear-gradient(90deg,#52B788,var(--green));border-radius:3px;transition:width .5s}
+.ach-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ach-row:last-child{border-bottom:none}
+.ach-row.locked{opacity:.4;filter:grayscale(.5)}
+.ach-icon{font-size:24px;width:32px;text-align:center;flex-shrink:0}
+.ach-info{flex:1}
+.ach-name{font-size:14px;font-weight:700;color:var(--text)}
+.ach-desc{font-size:12px;color:var(--text2)}
+.sight-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.sight-row:last-child{border-bottom:none}
+.sight-emoji{font-size:28px;width:36px;text-align:center;flex-shrink:0}
+.sight-info{flex:1}
+.sight-name{font-size:14px;font-weight:600;color:var(--text)}
+.sight-time{font-size:11px;color:var(--text2);margin-top:1px}
+.sight-new{background:#EF4444;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+
+/* TOAST */
+#toast{position:fixed;top:calc(var(--safe-top) + 16px);left:50%;transform:translateX(-50%) translateY(-100px);background:linear-gradient(135deg,var(--green-light),var(--green));color:#fff;padding:10px 20px;border-radius:50px;font-size:14px;font-weight:600;z-index:3000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+#toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
-
 <div id="app">
 
   <!-- MAP SCREEN -->
   <div class="screen active" id="map-screen">
     <div class="hud">
       <div class="hud-card">
-        <div class="hud-level">Lv. <span id="hud-level">1</span></div>
+        <div class="hud-level">Lv.&nbsp;<span id="hud-level">1</span></div>
         <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
         <div class="xp-txt"><span id="hud-xp">0</span> XP</div>
       </div>
       <div class="hud-card">
         <div style="font-size:16px;font-weight:700">📋 <span id="hud-disc">0</span></div>
         <div style="font-size:10px;color:var(--text2)">Arten</div>
+      </div>
+      <div class="hud-card" id="hud-streak" style="display:none">
+        <div style="font-size:16px;font-weight:700">🔥 <span id="hud-streak-num">1</span></div>
+        <div style="font-size:10px;color:var(--text2)">Streak</div>
       </div>
     </div>
     <div id="map-area"></div>
@@ -299,6 +300,21 @@
         <div class="prof-name">Naturentdecker</div>
         <div class="prof-date" id="prof-date"></div>
       </div>
+      <!-- Streak -->
+      <div class="card-section streak-section">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:40px">🔥</div>
+          <div>
+            <div style="font-size:28px;font-weight:800;color:var(--text)"><span id="streak-num">1</span> Tag<span id="streak-plural"></span></div>
+            <div style="font-size:13px;color:var(--text2)">Tages-Streak</div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-size:11px;color:var(--text2)">Heute aktiv</div>
+            <div style="font-size:13px;font-weight:700;color:var(--green)" id="streak-today">✓</div>
+          </div>
+        </div>
+      </div>
+      <!-- Level / XP -->
       <div class="card-section">
         <div class="level-row">
           <span class="level-lbl">Level</span>
@@ -310,16 +326,24 @@
           <span style="color:var(--text2)" id="prof-xp-next">Noch 100 XP bis Level 2</span>
         </div>
       </div>
+      <!-- Stats grid -->
       <div style="margin:0 12px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div class="stat-tile"><div class="stat-icon">📋</div><div class="stat-num" id="ps-disc">0</div><div class="stat-sub">Arten entdeckt</div></div>
         <div class="stat-tile"><div class="stat-icon">👀</div><div class="stat-num" id="ps-enc">0</div><div class="stat-sub">Beobachtungen</div></div>
         <div class="stat-tile"><div class="stat-icon">🏆</div><div class="stat-num" id="ps-ach">0</div><div class="stat-sub">Achievements</div></div>
         <div class="stat-tile"><div class="stat-icon">⭐</div><div class="stat-num" id="ps-xp">0</div><div class="stat-sub">Gesamt-XP</div></div>
       </div>
+      <!-- Recent sightings -->
+      <div class="card-section">
+        <div class="section-title">Letzte Sichtungen</div>
+        <div id="sight-list"><p style="font-size:14px;color:var(--text2)">Noch keine Sichtungen</p></div>
+      </div>
+      <!-- Category progress -->
       <div class="card-section">
         <div class="section-title">Fortschritt nach Kategorie</div>
         <div id="cat-progress"></div>
       </div>
+      <!-- Achievements -->
       <div class="card-section" style="margin-bottom:24px">
         <div class="section-title">Achievements</div>
         <div id="ach-list"></div>
@@ -337,8 +361,9 @@
 </div>
 
 <!-- ENCOUNTER MODAL -->
-<div class="modal-bg" id="modal-bg">
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this&&!catchGameData)closeModal()">
   <div class="modal">
+    <div class="modal-handle"></div>
     <div class="modal-header" id="modal-header">
       <span class="rarity" id="modal-rarity"></span>
       <span class="cat" id="modal-cat"></span>
@@ -361,10 +386,45 @@
         <div class="new-disc" id="res-new" style="display:none">🌟 Neue Entdeckung!</div>
         <div class="xp-gained" id="res-xp"></div>
         <div class="ach-txt" id="res-ach" style="display:none"></div>
-        <button class="btn-continue" onclick="closeModal()">Weiter</button>
+        <button class="btn-continue" onclick="closeModal()">Weiter erkunden</button>
+      </div>
+      <div id="modal-escape" style="display:none" class="result-box">
+        <div style="font-size:52px;margin-bottom:8px">💨</div>
+        <div style="font-size:20px;font-weight:700;color:#EF4444;margin-bottom:6px">Entkommen!</div>
+        <div style="font-size:14px;color:var(--text2);margin-bottom:16px">Das Tier ist entkommen. Beim nächsten Mal klappt es!</div>
+        <button class="btn-continue" onclick="closeModal()">Schließen</button>
       </div>
     </div>
   </div>
+</div>
+
+<!-- CATCH OVERLAY -->
+<div class="catch-overlay" id="catch-overlay">
+  <div class="catch-container">
+    <div class="catch-header-row">
+      <span class="catch-ov-emoji" id="catch-ov-emoji"></span>
+      <div>
+        <div class="catch-ov-name" id="catch-ov-name"></div>
+        <div class="catch-instruction">Tippe <span id="catch-req">1</span>× auf das Tier!</div>
+      </div>
+    </div>
+    <div class="catch-arena" id="catch-arena">
+      <div class="catch-emoji-elem" id="catch-emoji-elem" onclick="hitCatchEmoji()"></div>
+    </div>
+    <div class="catch-timer-wrap">
+      <div class="catch-timer-bar" id="catch-timer-bar" style="width:100%"></div>
+    </div>
+    <div class="catch-dots" id="catch-dots"></div>
+    <button class="btn-skip" onclick="skipCatch()">Aufgeben</button>
+  </div>
+</div>
+
+<!-- LEVEL UP OVERLAY -->
+<div id="levelup-overlay">
+  <div class="levelup-star">⭐</div>
+  <div class="levelup-label">Level erreicht</div>
+  <div class="levelup-num" id="levelup-num">2</div>
+  <div class="levelup-sub">Herzlichen Glückwunsch!</div>
 </div>
 
 <!-- DETAIL VIEW -->
@@ -379,396 +439,565 @@
 <script>
 // ===== ANIMAL DATABASE =====
 const ANIMALS = [
+  // BIRDS
   {id:'amsel',name:'Amsel',sci:'Turdus merula',cat:'bird',desc:'Einer der häufigsten Singvögel Europas. Das Männchen ist schwarz mit orangem Schnabel.',hab:['forest','urban','meadow'],rar:'common',time:['dawn','day','dusk'],seasons:['spring','summer','autumn','winter'],emoji:'🐦‍⬛',fact:'Amseln können über 100 verschiedene Melodien singen und imitieren sogar Handyklingeltöne.',xp:10,size:'24-27 cm',diet:'Würmer, Insekten, Beeren'},
   {id:'rotkehlchen',name:'Rotkehlchen',sci:'Erithacus rubecula',cat:'bird',desc:'Kleiner Singvogel mit markanter orangeroter Brust.',hab:['forest','urban','meadow'],rar:'common',time:['dawn','day','dusk'],seasons:['spring','summer','autumn','winter'],emoji:'🐦',fact:'Rotkehlchen singen sogar nachts in der Nähe von Straßenlaternen.',xp:10,size:'12-14 cm',diet:'Insekten, Spinnen, Beeren'},
   {id:'blaumeise',name:'Blaumeise',sci:'Cyanistes caeruleus',cat:'bird',desc:'Kleine, lebhafte Meise mit blauer Kappe und gelbem Bauch.',hab:['forest','urban'],rar:'common',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'💙',fact:'Blaumeisen können kopfüber an Ästen hängen, um an Insekten zu gelangen.',xp:10,size:'11-12 cm',diet:'Insekten, Samen, Nüsse'},
   {id:'kohlmeise',name:'Kohlmeise',sci:'Parus major',cat:'bird',desc:'Größte europäische Meise mit schwarzem Kopf und weißen Wangen.',hab:['forest','urban'],rar:'common',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🐤',fact:'Kohlmeisen sind so clever, dass sie gelernt haben, Milchflaschen zu öffnen.',xp:10,size:'13-15 cm',diet:'Insekten, Samen, Nüsse'},
   {id:'buchfink',name:'Buchfink',sci:'Fringilla coelebs',cat:'bird',desc:'Einer der häufigsten Finken Europas mit melodischem Gesang.',hab:['forest','urban','meadow'],rar:'common',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🐦',fact:'Der "Regenruf" des Buchfinks wurde früher als Wettervorhersage genutzt.',xp:10,size:'14-16 cm',diet:'Samen, Insekten'},
+  {id:'nebelkraehe',name:'Nebelkrähe',sci:'Corvus cornix',cat:'bird',desc:'Intelligente Krähe mit grauem Mantel und schwarzem Kopf.',hab:['urban','meadow','forest'],rar:'common',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🐦‍⬛',fact:'Nebelkrähen legen Nüsse auf Straßen und warten, bis Autos sie knacken.',xp:10,size:'44-51 cm',diet:'Aas, Insekten, Eier, Früchte'},
   {id:'specht',name:'Buntspecht',sci:'Dendrocopos major',cat:'bird',desc:'Schwarz-weiß-roter Specht, der durch sein Trommeln auffällt.',hab:['forest'],rar:'uncommon',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🪶',fact:'Ein Buntspecht hämmert bis zu 20 Mal pro Sekunde gegen den Baum.',xp:25,size:'22-23 cm',diet:'Insekten, Baumsamen, Nüsse'},
-  {id:'eisvogel',name:'Eisvogel',sci:'Alcedo atthis',cat:'bird',desc:'Schillernder blau-oranger Vogel, der pfeilschnell ins Wasser taucht.',hab:['water','wetland'],rar:'rare',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'💎',fact:'Der Eisvogel kann unter Wasser die Augen offen halten dank einer speziellen Nickhaut.',xp:75,size:'16-17 cm',diet:'Kleine Fische, Insektenlarven'},
-  {id:'uhu',name:'Uhu',sci:'Bubo bubo',cat:'bird',desc:'Europas größte Eule mit markanten Federohren und orangenen Augen.',hab:['forest','mountain'],rar:'very_rare',time:['dusk','night'],seasons:['spring','summer','autumn','winter'],emoji:'🦉',fact:'Der Uhu kann seinen Kopf um 270 Grad drehen.',xp:150,size:'60-75 cm',diet:'Mäuse, Ratten, Hasen, Vögel'},
-  {id:'steinadler',name:'Steinadler',sci:'Aquila chrysaetos',cat:'bird',desc:'König der Lüfte – majestätischer Greifvogel der Alpen.',hab:['mountain'],rar:'legendary',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🦅',fact:'Ein Steinadler kann eine Gämse aus 3 km Entfernung erkennen.',xp:300,size:'75-90 cm',diet:'Murmeltiere, Hasen, Vögel'},
   {id:'storch',name:'Weißstorch',sci:'Ciconia ciconia',cat:'bird',desc:'Großer schwarz-weißer Schreitvogel mit langem roten Schnabel.',hab:['meadow','wetland'],rar:'uncommon',time:['day'],seasons:['spring','summer'],emoji:'🦩',fact:'Störche klappern mit dem Schnabel bis zu 8 Mal pro Sekunde.',xp:30,size:'100-115 cm',diet:'Frösche, Mäuse, Insekten'},
   {id:'mauersegler',name:'Mauersegler',sci:'Apus apus',cat:'bird',desc:'Akrobatischer Flieger, der fast sein ganzes Leben in der Luft verbringt.',hab:['urban'],rar:'uncommon',time:['day','dusk'],seasons:['spring','summer'],emoji:'✈️',fact:'Mauersegler schlafen im Flug! Sie können 10 Monate ohne Landung fliegen.',xp:25,size:'16-17 cm',diet:'Fluginsekten'},
+  {id:'graureiher',name:'Graureiher',sci:'Ardea cinerea',cat:'bird',desc:'Großer, grauer Reiher, der regungslos an Gewässern auf Beute lauert.',hab:['water','wetland','meadow'],rar:'uncommon',time:['day','dawn','dusk'],seasons:['spring','summer','autumn','winter'],emoji:'🦢',fact:'Graureiher stehen manchmal stundenlang wie Statuen am Wasser.',xp:25,size:'90-98 cm',diet:'Fische, Frösche, Mäuse'},
+  {id:'eisvogel',name:'Eisvogel',sci:'Alcedo atthis',cat:'bird',desc:'Schillernder blau-oranger Vogel, der pfeilschnell ins Wasser taucht.',hab:['water','wetland'],rar:'rare',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'💎',fact:'Der Eisvogel kann unter Wasser die Augen offen halten dank einer speziellen Nickhaut.',xp:75,size:'16-17 cm',diet:'Kleine Fische, Insektenlarven'},
   {id:'wanderfalke',name:'Wanderfalke',sci:'Falco peregrinus',cat:'bird',desc:'Das schnellste Tier der Welt – erreicht im Sturzflug über 300 km/h.',hab:['mountain','urban'],rar:'rare',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🦅',fact:'Wanderfalken nisten auf Hochhäusern und Kirchtürmen in Städten.',xp:75,size:'34-50 cm',diet:'Tauben, kleinere Vögel'},
-  {id:'rotfuchs',name:'Rotfuchs',sci:'Vulpes vulpes',cat:'mammal',desc:'Schlauer Einzelgänger mit buschigem Schwanz und spitzer Schnauze.',hab:['forest','urban','meadow'],rar:'uncommon',time:['dusk','night','dawn'],seasons:['spring','summer','autumn','winter'],emoji:'🦊',fact:'Füchse nutzen das Erdmagnetfeld zum Jagen – sie springen bevorzugt nach Nordosten.',xp:30,size:'60-90 cm',diet:'Mäuse, Vögel, Beeren'},
-  {id:'reh',name:'Reh',sci:'Capreolus capreolus',cat:'mammal',desc:'Elegantes, scheues Waldtier. Europas häufigstes Hirschartiges.',hab:['forest','meadow'],rar:'uncommon',time:['dawn','dusk'],seasons:['spring','summer','autumn','winter'],emoji:'🦌',fact:'Rehkitze haben keinen Eigengeruch – ein Schutz vor Fressfeinden.',xp:25,size:'100-135 cm',diet:'Kräuter, Gräser, Knospen'},
+  {id:'wasseramsel',name:'Wasseramsel',sci:'Cinclus cinclus',cat:'bird',desc:'Der einzige Singvogel, der unter Wasser läuft und taucht.',hab:['water'],rar:'rare',time:['day','dawn','dusk'],seasons:['spring','summer','autumn','winter'],emoji:'🐦',fact:'Wasseramseln können am Bachboden gegen die Strömung laufen.',xp:75,size:'17-20 cm',diet:'Wasserinsekten, kleine Fische'},
+  {id:'uhu',name:'Uhu',sci:'Bubo bubo',cat:'bird',desc:'Europas größte Eule mit markanten Federohren und orangenen Augen.',hab:['forest','mountain'],rar:'very_rare',time:['dusk','night'],seasons:['spring','summer','autumn','winter'],emoji:'🦉',fact:'Der Uhu kann seinen Kopf um 270 Grad drehen.',xp:150,size:'60-75 cm',diet:'Mäuse, Ratten, Hasen, Vögel'},
+  {id:'steinadler',name:'Steinadler',sci:'Aquila chrysaetos',cat:'bird',desc:'König der Lüfte – majestätischer Greifvogel der Alpen.',hab:['mountain'],rar:'legendary',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🦅',fact:'Ein Steinadler kann eine Gämse aus 3 km Entfernung erkennen.',xp:300,size:'75-90 cm',diet:'Murmeltiere, Hasen, Vögel'},
+  // MAMMALS
   {id:'eichhoernchen',name:'Eichhörnchen',sci:'Sciurus vulgaris',cat:'mammal',desc:'Flinker Kletterer mit buschigem Schwanz und Pinselohren.',hab:['forest','urban'],rar:'common',time:['day'],seasons:['spring','summer','autumn','winter'],emoji:'🐿️',fact:'Eichhörnchen vergessen bis zu 75% ihrer versteckten Nüsse – und pflanzen so neue Bäume.',xp:15,size:'20-25 cm',diet:'Nüsse, Samen, Pilze'},
   {id:'igel',name:'Igel',sci:'Erinaceus europaeus',cat:'mammal',desc:'Stacheliger Insektenfresser, der sich bei Gefahr zusammenrollt.',hab:['urban','forest','meadow'],rar:'common',time:['night','dusk'],seasons:['spring','summer','autumn'],emoji:'🦔',fact:'Igel haben ca. 8.000 Stacheln und sind immun gegen Schlangengift.',xp:15,size:'22-30 cm',diet:'Insekten, Schnecken, Würmer'},
-  {id:'dachs',name:'Dachs',sci:'Meles meles',cat:'mammal',desc:'Kräftiger Allesfresser mit charakteristischer schwarz-weißer Gesichtsmaske.',hab:['forest'],rar:'rare',time:['night'],seasons:['spring','summer','autumn','winter'],emoji:'🦡',fact:'Dachsbaue können über 100 Jahre alt sein und werden von Generation zu Generation vererbt.',xp:50,size:'60-90 cm',diet:'Regenwürmer, Insekten, Beeren'},
-  {id:'wildschwein',name:'Wildschwein',sci:'Sus scrofa',cat:'mammal',desc:'Kräftiges, intelligentes Tier, das in Rotten durch den Wald zieht.',hab:['forest'],rar:'uncommon',time:['night','dusk','dawn'],seasons:['spring','summer','autumn','winter'],emoji:'🐗',fact:'Wildschweine sind hervorragende Schwimmer.',xp:30,size:'130-180 cm',diet:'Eicheln, Wurzeln, Insekten'},
+  {id:'wildkaninchen',name:'Wildkaninchen',sci:'Oryctolagus cuniculus',cat:'mammal',desc:'Kleines Nagetier mit langen Ohren – Stammvater aller Hauskaninchen.',hab:['meadow','urban'],rar:'common',time:['dawn','dusk','day'],seasons:['spring','summer','autumn','winter'],emoji:'🐇',fact:'Wildkaninchen leben in unterirdischen Bauten mit bis zu 30 Mitgliedern.',xp:10,size:'34-50 cm',diet:'Gras, Kräuter, Knospen'},
+  {id:'rotfuchs',name:'Rotfuchs',sci:'Vulpes vulpes',cat:'mammal',desc:'Schlauer Einzelgänger mit buschigem Schwanz und spitzer Schnauze.',hab:['forest','urban','meadow'],rar:'uncommon',time:['dusk','night','dawn'],seasons:['spring','summer','autumn','winter'],emoji:'🦊',fact:'Füchse nutzen das Erdmagnetfeld zum Jagen – sie springen bevorzugt nach Nordosten.',xp:30,size:'60-90 cm',diet:'Mäuse, Vögel, Beeren'},
+  {id:'reh',name:'Reh',sci:'Capreolus capreolus',cat:'mammal',desc:'Elegantes, scheues Waldtier. Europas häufigstes Hirschartiges.',hab:['forest','meadow'],rar:'uncommon',time:['dawn','dusk'],seasons:['spring','summer','autumn','winter'],emoji:'🦌',fact:'Rehkitze haben keinen Eigengeruch – ein Schutz vor Fressfeinden.',xp:25,size:'100-135 cm',diet:'Kräuter, Gräser, Knospen'},
   {id:'fledermaus',name:'Zwergfledermaus',sci:'Pipistrellus pipistrellus',cat:'mammal',desc:'Winzige Fledermaus, die mit Ultraschall jagt.',hab:['urban','forest'],rar:'uncommon',time:['night','dusk'],seasons:['spring','summer','autumn'],emoji:'🦇',fact:'Eine Zwergfledermaus frisst bis zu 3.000 Mücken pro Nacht.',xp:30,size:'3,5-5 cm',diet:'Fluginsekten, Mücken'},
+  {id:'wildschwein',name:'Wildschwein',sci:'Sus scrofa',cat:'mammal',desc:'Kräftiges, intelligentes Tier, das in Rotten durch den Wald zieht.',hab:['forest'],rar:'uncommon',time:['night','dusk','dawn'],seasons:['spring','summer','autumn','winter'],emoji:'🐗',fact:'Wildschweine sind hervorragende Schwimmer.',xp:30,size:'130-180 cm',diet:'Eicheln, Wurzeln, Insekten'},
+  {id:'dachs',name:'Dachs',sci:'Meles meles',cat:'mammal',desc:'Kräftiger Allesfresser mit charakteristischer schwarz-weißer Gesichtsmaske.',hab:['forest'],rar:'rare',time:['night'],seasons:['spring','summer','autumn','winter'],emoji:'🦡',fact:'Dachsbaue können über 100 Jahre alt sein und werden generationenweise vererbt.',xp:50,size:'60-90 cm',diet:'Regenwürmer, Insekten, Beeren'},
+  {id:'biber',name:'Biber',sci:'Castor fiber',cat:'mammal',desc:'Europas größtes Nagetier – Baumeister der Gewässer.',hab:['water','wetland'],rar:'rare',time:['dusk','night'],seasons:['spring','summer','autumn','winter'],emoji:'🦫',fact:'Biberdämme können ganze Ökosysteme verändern und neue Feuchtgebiete schaffen.',xp:75,size:'80-100 cm',diet:'Rinde, Äste, Wasserpflanzen'},
+  {id:'siebenschlaefer',name:'Siebenschläfer',sci:'Glis glis',cat:'mammal',desc:'Kleines Nagetier mit buschigem Schwanz, das bis zu 7 Monate schläft.',hab:['forest'],rar:'very_rare',time:['night'],seasons:['spring','summer','autumn'],emoji:'🐭',fact:'Der Siebenschläfer hält bis zu 7 Monate Winterschlaf – daher sein Name.',xp:150,size:'12-19 cm',diet:'Nüsse, Samen, Früchte, Insekten'},
   {id:'luchs',name:'Luchs',sci:'Lynx lynx',cat:'mammal',desc:'Europas größte Wildkatze – ein heimlicher Jäger mit Pinselohren.',hab:['forest','mountain'],rar:'legendary',time:['dawn','dusk','night'],seasons:['spring','summer','autumn','winter'],emoji:'🐱',fact:'In Deutschland gibt es nur ca. 130 Luchse – im Harz und Bayerischen Wald.',xp:300,size:'80-120 cm',diet:'Rehe, Hasen, Vögel'},
   {id:'wolf',name:'Wolf',sci:'Canis lupus',cat:'mammal',desc:'Zurückgekehrter Ureinwohner der europäischen Wälder.',hab:['forest','meadow'],rar:'legendary',time:['dawn','dusk','night'],seasons:['spring','summer','autumn','winter'],emoji:'🐺',fact:'Wölfe können das Heulen eines Artgenossen aus 16 km Entfernung hören.',xp:300,size:'100-140 cm',diet:'Rehe, Hirsche, Wildschweine'},
+  // REPTILES
   {id:'ringelnatter',name:'Ringelnatter',sci:'Natrix natrix',cat:'reptile',desc:'Harmlose Wasserschlange mit gelben Halbmondflecken am Hinterkopf.',hab:['water','wetland','meadow'],rar:'uncommon',time:['day'],seasons:['spring','summer','autumn'],emoji:'🐍',fact:'Ringelnattern stellen sich bei Gefahr tot – inklusive heraushängender Zunge.',xp:30,size:'60-120 cm',diet:'Frösche, Kröten, Fische'},
-  {id:'zauneidechse',name:'Zauneidechse',sci:'Lacerta agilis',cat:'reptile',desc:'Sonnenliebende Eidechse mit leuchtend grünen Flanken beim Männchen.',hab:['meadow','forest'],rar:'uncommon',time:['day'],seasons:['spring','summer','autumn'],emoji:'🦎',fact:'Bei Gefahr kann die Zauneidechse ihren Schwanz abwerfen – er wächst wieder nach.',xp:25,size:'18-24 cm',diet:'Insekten, Spinnen'},
+  {id:'zauneidechse',name:'Zauneidechse',sci:'Lacerta agilis',cat:'reptile',desc:'Sonnenliebende Eidechse mit leuchtend grünen Flanken beim Männchen.',hab:['meadow','forest'],rar:'uncommon',time:['day'],seasons:['spring','summer','autumn'],emoji:'🦎',fact:'Bei Gefahr kann die Zauneidechse ihren Schwanz abwerfen – er wächst nach.',xp:25,size:'18-24 cm',diet:'Insekten, Spinnen'},
+  // AMPHIBIANS
   {id:'grasfrosch',name:'Grasfrosch',sci:'Rana temporaria',cat:'amphibian',desc:'Häufigster einheimischer Frosch mit dunklem Schläfenfleck.',hab:['wetland','water','meadow'],rar:'common',time:['night','dusk','dawn'],seasons:['spring','summer','autumn'],emoji:'🐸',fact:'Im Frühling wandern tausende Grasfrösche zu ihren Laichgewässern.',xp:15,size:'6-9 cm',diet:'Insekten, Schnecken, Würmer'},
-  {id:'feuersalamander',name:'Feuersalamander',sci:'Salamandra salamandra',cat:'amphibian',desc:'Auffälliger schwarz-gelber Lurch der feuchten Buchenwälder.',hab:['forest','water'],rar:'rare',time:['night','dusk'],seasons:['spring','summer','autumn'],emoji:'🔥',fact:'Das gelbe Muster ist einzigartig wie ein Fingerabdruck.',xp:50,size:'14-20 cm',diet:'Schnecken, Würmer, Insekten'},
   {id:'erdkroete',name:'Erdkröte',sci:'Bufo bufo',cat:'amphibian',desc:'Warzig und gemütlich – wandert im Frühling in großen Gruppen.',hab:['forest','wetland','urban'],rar:'common',time:['night','dusk'],seasons:['spring','summer','autumn'],emoji:'🐸',fact:'Erdkröten kehren zum Laichen immer an ihren Geburtstümpel zurück.',xp:10,size:'8-12 cm',diet:'Insekten, Schnecken, Würmer'},
+  {id:'feuersalamander',name:'Feuersalamander',sci:'Salamandra salamandra',cat:'amphibian',desc:'Auffälliger schwarz-gelber Lurch der feuchten Buchenwälder.',hab:['forest','water'],rar:'rare',time:['night','dusk'],seasons:['spring','summer','autumn'],emoji:'🔥',fact:'Das gelbe Muster ist einzigartig wie ein Fingerabdruck.',xp:50,size:'14-20 cm',diet:'Schnecken, Würmer, Insekten'},
+  // INSECTS
   {id:'admiral',name:'Admiral',sci:'Vanessa atalanta',cat:'insect',desc:'Auffälliger Wanderfalter mit samtschwarzen Flügeln und roten Binden.',hab:['meadow','urban','forest'],rar:'common',time:['day'],seasons:['spring','summer','autumn'],emoji:'🦋',fact:'Admirale wandern jeden Frühling aus dem Mittelmeerraum – über 2.000 km.',xp:10,size:'5,5-6 cm',diet:'Nektar, überreifes Obst'},
   {id:'schwalbenschwanz',name:'Schwalbenschwanz',sci:'Papilio machaon',cat:'insect',desc:'Einer der größten und schönsten einheimischen Schmetterlinge.',hab:['meadow'],rar:'rare',time:['day'],seasons:['spring','summer'],emoji:'🦋',fact:'Die Raupe frisst Wilde Möhre und Fenchel.',xp:50,size:'6,5-8,6 cm',diet:'Nektar'},
   {id:'hirschkaefer',name:'Hirschkäfer',sci:'Lucanus cervus',cat:'insect',desc:'Europas größter Käfer mit beeindruckenden geweihartigen Mandibeln.',hab:['forest'],rar:'rare',time:['dusk','night'],seasons:['summer'],emoji:'🪲',fact:'Hirschkäfer-Larven leben bis zu 8 Jahre im Totholz.',xp:75,size:'3-8 cm',diet:'Baumsäfte'},
   {id:'gluehwuermchen',name:'Glühwürmchen',sci:'Lampyris noctiluca',cat:'insect',desc:'Magisches Leuchtinsekt der warmen Sommernächte.',hab:['forest','meadow'],rar:'rare',time:['night'],seasons:['summer'],emoji:'✨',fact:'Nur die Weibchen leuchten stark – um fliegende Männchen anzulocken.',xp:50,size:'1-2 cm',diet:'Schnecken (Larven)'},
+  // FISH
   {id:'bachforelle',name:'Bachforelle',sci:'Salmo trutta fario',cat:'fish',desc:'Eleganter Raubfisch klarer Gebirgsbäche mit typischen roten Punkten.',hab:['water'],rar:'uncommon',time:['day','dawn','dusk'],seasons:['spring','summer','autumn','winter'],emoji:'🐟',fact:'Bachforellen zeigen durch ihr Vorkommen gute Wasserqualität an.',xp:30,size:'25-50 cm',diet:'Insekten, kleine Fische'},
   {id:'hecht',name:'Hecht',sci:'Esox lucius',cat:'fish',desc:'Der "Wolf der Gewässer" – ein blitzschneller Lauerjäger.',hab:['water'],rar:'rare',time:['day','dawn'],seasons:['spring','summer','autumn','winter'],emoji:'🐊',fact:'Hechte können aus dem Stand auf 50 km/h beschleunigen.',xp:50,size:'50-120 cm',diet:'Fische, Frösche'},
 ];
 
-const RARITY_COLOR = {common:'#78C850',uncommon:'#4A90D9',rare:'#A855F7',very_rare:'#F59E0B',legendary:'#EF4444'};
-const RARITY_LABEL = {common:'Häufig',uncommon:'Ungewöhnlich',rare:'Selten',very_rare:'Sehr selten',legendary:'Legendär'};
-const CAT_LABEL = {bird:'Vogel',mammal:'Säugetier',reptile:'Reptil',amphibian:'Amphibie',insect:'Insekt',fish:'Fisch'};
-const CAT_EMOJI = {bird:'🐦',mammal:'🐾',reptile:'🦎',amphibian:'🐸',insect:'🦋',fish:'🐟'};
-const CAT_LABEL_PL = {bird:'Vögel',mammal:'Säugetiere',reptile:'Reptilien',amphibian:'Amphibien',insect:'Insekten',fish:'Fische'};
+const RARITY_COLOR={common:'#52B788',uncommon:'#4A90D9',rare:'#A855F7',very_rare:'#F59E0B',legendary:'#EF4444'};
+const RARITY_LABEL={common:'Häufig',uncommon:'Ungewöhnlich',rare:'Selten',very_rare:'Sehr selten',legendary:'Legendär'};
+const CAT_LABEL={bird:'Vogel',mammal:'Säugetier',reptile:'Reptil',amphibian:'Amphibie',insect:'Insekt',fish:'Fisch'};
+const CAT_EMOJI={bird:'🐦',mammal:'🐾',reptile:'🦎',amphibian:'🐸',insect:'🦋',fish:'🐟'};
+const CAT_LABEL_PL={bird:'Vögel',mammal:'Säugetiere',reptile:'Reptilien',amphibian:'Amphibien',insect:'Insekten',fish:'Fische'};
 
-const ACHIEVEMENTS = [
+const ACHIEVEMENTS=[
   {id:'first',name:'Erste Entdeckung',desc:'Entdecke dein erstes Tier',icon:'🌟',req:1,type:'discover'},
+  {id:'enc10',name:'Aktiver Beobachter',desc:'Beobachte 10 Tiere',icon:'👁️',req:10,type:'encounter'},
   {id:'nat10',name:'Hobby-Naturalist',desc:'Entdecke 10 verschiedene Arten',icon:'🔍',req:10,type:'discover'},
-  {id:'nat25',name:'Naturkenner',desc:'Entdecke 25 verschiedene Arten',icon:'📖',req:25,type:'discover'},
-  {id:'enc50',name:'Fleißiger Beobachter',desc:'50 Tiere beobachtet',icon:'👀',req:50,type:'encounter'},
+  {id:'nat20',name:'Naturkenner',desc:'Entdecke 20 verschiedene Arten',icon:'📖',req:20,type:'discover'},
+  {id:'enc50',name:'Fleißiger Beobachter',desc:'Beobachte 50 Tiere',icon:'👀',req:50,type:'encounter'},
   {id:'birds',name:'Vogelfreund',desc:'Entdecke 10 Vogelarten',icon:'🐦',req:10,type:'cat',cat:'bird'},
   {id:'mammals',name:'Spurenleser',desc:'Entdecke 8 Säugetierarten',icon:'🐾',req:8,type:'cat',cat:'mammal'},
+  {id:'insects',name:'Insektenfreund',desc:'Entdecke 4 Insektenarten',icon:'🦋',req:4,type:'cat',cat:'insect'},
   {id:'rare1',name:'Seltener Fund',desc:'Entdecke ein seltenes Tier',icon:'💎',req:1,type:'rar',rar:'rare'},
+  {id:'veryrare1',name:'Sehr seltene Begegnung',desc:'Entdecke ein sehr seltenes Tier',icon:'🌙',req:1,type:'rar',rar:'very_rare'},
   {id:'legend1',name:'Legendäre Begegnung',desc:'Entdecke ein legendäres Tier',icon:'👑',req:1,type:'rar',rar:'legendary'},
+  {id:'nat35',name:'Experte',desc:'Entdecke 35 verschiedene Arten',icon:'🏅',req:35,type:'discover'},
 ];
 
 // ===== GAME STATE =====
-let state = {
-  profile: {level:1,xp:0,xpNext:100,encounters:0,startDate:new Date().toISOString(),achievements:[]},
-  discovered: {},
-  spawns: [],
-  lat: 48.1351, lng: 11.582,
-  hasLocation: false,
-  cameraActive: false,
+let state={
+  profile:{level:1,xp:0,xpNext:100,encounters:0,startDate:new Date().toISOString(),achievements:[],streak:1,lastPlayDate:''},
+  discovered:{},
+  recentSightings:[],
+  spawns:[],
+  lat:48.1351,lng:11.582,
+  hasLocation:false,
+  cameraActive:false,
 };
 
-function loadState() {
-  try {
-    const s = localStorage.getItem('birdmon_state');
-    if (s) { const p = JSON.parse(s); Object.assign(state, p); state.spawns = []; }
-  } catch(e) {}
+function loadState(){
+  try{
+    const s=localStorage.getItem('birdmon_state');
+    if(s){
+      const p=JSON.parse(s);
+      Object.assign(state,p);
+      state.spawns=[];
+      if(!state.recentSightings)state.recentSightings=[];
+      if(!state.profile.streak)state.profile.streak=1;
+      if(!state.profile.lastPlayDate)state.profile.lastPlayDate='';
+    }
+  }catch(e){}
 }
 
-function saveState() {
-  try {
-    localStorage.setItem('birdmon_state', JSON.stringify({
-      profile: state.profile, discovered: state.discovered,
-      lat: state.lat, lng: state.lng,
+function saveState(){
+  try{
+    localStorage.setItem('birdmon_state',JSON.stringify({
+      profile:state.profile,discovered:state.discovered,
+      recentSightings:state.recentSightings,
+      lat:state.lat,lng:state.lng,
     }));
-  } catch(e) {}
+  }catch(e){}
+}
+
+// ===== DAILY STREAK =====
+function checkDailyStreak(){
+  const today=new Date().toDateString();
+  const last=state.profile.lastPlayDate;
+  if(last===today)return;
+  if(!last){
+    state.profile.streak=1;
+  } else {
+    const yesterday=new Date(Date.now()-86400000).toDateString();
+    state.profile.streak=last===yesterday?(state.profile.streak||0)+1:1;
+    if(state.profile.streak>1)setTimeout(()=>showToast(`🔥 ${state.profile.streak} Tage Streak!`),1200);
+  }
+  state.profile.lastPlayDate=today;
+  saveState();
 }
 
 // ===== LEVEL SYSTEM =====
-function calcLevel(xp) {
-  let lvl = 1, needed = 100, total = 0;
-  while (xp >= total + needed) { total += needed; lvl++; needed = Math.floor(100 * Math.pow(1.3, lvl - 1)); }
-  return { level: lvl, xpNext: total + needed - xp, xpProgress: (xp - total) / needed };
+function calcLevel(xp){
+  let lvl=1,needed=100,total=0;
+  while(xp>=total+needed){total+=needed;lvl++;needed=Math.floor(100*Math.pow(1.3,lvl-1));}
+  return{level:lvl,xpNext:total+needed-xp,xpProgress:(xp-total)/needed};
 }
 
 // ===== TIME / SEASON =====
-function getTimeOfDay() {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 7) return 'dawn';
-  if (h >= 7 && h < 18) return 'day';
-  if (h >= 18 && h < 21) return 'dusk';
-  return 'night';
+function getTimeOfDay(){
+  const h=new Date().getHours();
+  if(h>=5&&h<7)return'dawn';
+  if(h>=7&&h<18)return'day';
+  if(h>=18&&h<21)return'dusk';
+  return'night';
 }
-function getSeason() {
-  const m = new Date().getMonth();
-  if (m >= 2 && m <= 4) return 'spring';
-  if (m >= 5 && m <= 7) return 'summer';
-  if (m >= 8 && m <= 10) return 'autumn';
-  return 'winter';
+function getSeason(){
+  const m=new Date().getMonth();
+  if(m>=2&&m<=4)return'spring';
+  if(m>=5&&m<=7)return'summer';
+  if(m>=8&&m<=10)return'autumn';
+  return'winter';
 }
 
 // ===== SPAWNING =====
-function getHabitats(lat, lng) {
-  const v = Math.abs(Math.sin(lat * 1000 + lng * 1000) * 10000 % 1);
-  const h = [];
-  if (v < .35) h.push('forest');
-  if (v > .25 && v < .55) h.push('meadow');
-  if (v > .45 && v < .65) h.push('water');
-  if (v > .55 && v < .8) h.push('urban');
-  if (v > .75 && v < .9) h.push('wetland');
-  if (v > .85) h.push('mountain');
-  if (!h.length) h.push('urban','meadow');
+function getHabitats(lat,lng){
+  const v=Math.abs(Math.sin(lat*1000+lng*1000)*10000%1);
+  const h=[];
+  if(v<.35)h.push('forest');
+  if(v>.25&&v<.55)h.push('meadow');
+  if(v>.45&&v<.65)h.push('water');
+  if(v>.55&&v<.8)h.push('urban');
+  if(v>.75&&v<.9)h.push('wetland');
+  if(v>.85)h.push('mountain');
+  if(!h.length)h.push('urban','meadow');
   return h;
 }
-
-function rarityWeight(r) {
-  return {common:40,uncommon:25,rare:8,very_rare:3,legendary:1}[r] || 10;
+function rarityWeight(r){return{common:40,uncommon:25,rare:8,very_rare:3,legendary:1}[r]||10}
+function weightedPick(arr){
+  const total=arr.reduce((s,a)=>s+rarityWeight(a.rar),0);
+  let r=Math.random()*total;
+  for(const a of arr){r-=rarityWeight(a.rar);if(r<=0)return a;}
+  return arr[arr.length-1];
 }
 
-function weightedPick(arr) {
-  const total = arr.reduce((s,a) => s + rarityWeight(a.rar), 0);
-  let r = Math.random() * total;
-  for (const a of arr) { r -= rarityWeight(a.rar); if (r <= 0) return a; }
-  return arr[arr.length - 1];
-}
-
-function refreshSpawns() {
-  const now = Date.now();
-  state.spawns = state.spawns.filter(s => s.despawn > now && !s.caught);
-  // Max 4 spawns at once
-  if (state.spawns.length >= 4) { renderSpawns(); return; }
-  const tod = getTimeOfDay(), season = getSeason();
-  const habs = getHabitats(state.lat, state.lng);
-  const candidates = ANIMALS.filter(a =>
-    a.hab.some(h => habs.includes(h)) &&
-    a.time.includes(tod) &&
-    a.seasons.includes(season)
-  );
-  if (!candidates.length) { renderSpawns(); return; }
-  // Spawn 1-2 at a time
-  const toSpawn = Math.min(4 - state.spawns.length, Math.floor(Math.random() * 2) + 1);
-  for (let i = 0; i < toSpawn; i++) {
-    const animal = weightedPick(candidates);
-    const lifeM = {legendary:5,very_rare:8,rare:12,uncommon:15,common:20}[animal.rar];
+function refreshSpawns(){
+  const now=Date.now();
+  state.spawns=state.spawns.filter(s=>s.despawn>now&&!s.caught);
+  if(state.spawns.length>=4){renderSpawns();return;}
+  const tod=getTimeOfDay(),season=getSeason();
+  const habs=getHabitats(state.lat,state.lng);
+  const candidates=ANIMALS.filter(a=>a.hab.some(h=>habs.includes(h))&&a.time.includes(tod)&&a.seasons.includes(season));
+  if(!candidates.length){renderSpawns();return;}
+  const toSpawn=Math.min(4-state.spawns.length,Math.floor(Math.random()*2)+1);
+  for(let i=0;i<toSpawn;i++){
+    const animal=weightedPick(candidates);
+    const lifeM={legendary:5,very_rare:8,rare:12,uncommon:15,common:20}[animal.rar];
     state.spawns.push({
-      id: animal.id + '_' + now + '_' + i,
-      animal,
-      lat: state.lat + (Math.random() - .5) * .004,
-      lng: state.lng + (Math.random() - .5) * .006,
-      spawn: now, despawn: now + lifeM * 60000, caught: false,
+      id:animal.id+'_'+now+'_'+i,animal,
+      lat:state.lat+(Math.random()-.5)*.004,
+      lng:state.lng+(Math.random()-.5)*.006,
+      spawn:now,despawn:now+lifeM*60000,caught:false,
     });
   }
   renderSpawns();
 }
 
-function distM(lat1,lon1,lat2,lon2) {
-  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+function distM(lat1,lon1,lat2,lon2){
+  const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
 // ===== MAP (Leaflet) =====
-let map = null, playerMarker = null, spawnLayerGroup = null;
+let map=null,playerMarker=null,spawnLayerGroup=null;
 
-function initMap() {
-  if (map) return;
-  map = L.map('map-area', { zoomControl: true, attributionControl: false })
-         .setView([state.lat, state.lng], 16);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-  }).addTo(map);
-  L.control.attribution({ prefix: '© <a href="https://openstreetmap.org">OSM</a>' }).addTo(map);
-
-  const playerIcon = L.divIcon({
-    className: 'leaflet-div-icon',
-    html: '<div class="player-dot-map">🧭</div>',
-    iconSize: [44, 44], iconAnchor: [22, 22],
-  });
-  playerMarker = L.marker([state.lat, state.lng], { icon: playerIcon, zIndexOffset: 2000 }).addTo(map);
-  spawnLayerGroup = L.layerGroup().addTo(map);
+function initMap(){
+  if(map)return;
+  map=L.map('map-area',{zoomControl:true,attributionControl:false}).setView([state.lat,state.lng],16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  L.control.attribution({prefix:'© <a href="https://openstreetmap.org">OSM</a>'}).addTo(map);
+  const playerIcon=L.divIcon({className:'leaflet-div-icon',html:'<div class="player-dot-map">🧭</div>',iconSize:[44,44],iconAnchor:[22,22]});
+  playerMarker=L.marker([state.lat,state.lng],{icon:playerIcon,zIndexOffset:2000}).addTo(map);
+  spawnLayerGroup=L.layerGroup().addTo(map);
 }
 
-function renderSpawns() {
-  if (!map || !spawnLayerGroup) { updateCameraView(); return; }
+function renderSpawns(){
+  if(!map||!spawnLayerGroup){updateCameraView();return;}
   spawnLayerGroup.clearLayers();
-  for (const s of state.spawns) {
-    if (s.caught || s.despawn < Date.now()) continue;
-    const dist = Math.round(distM(state.lat, state.lng, s.lat, s.lng));
-    const color = RARITY_COLOR[s.animal.rar];
-    const icon = L.divIcon({
-      className: 'leaflet-div-icon',
-      html: `<div class="spawn-tip">
-        <div class="spawn-circle-map" style="border-color:${color}">${s.animal.emoji}</div>
+  for(const s of state.spawns){
+    if(s.caught||s.despawn<Date.now())continue;
+    const dist=Math.round(distM(state.lat,state.lng,s.lat,s.lng));
+    const color=RARITY_COLOR[s.animal.rar];
+    const glowClass=s.animal.rar!=='common'?`glow-${s.animal.rar}`:'';
+    const icon=L.divIcon({
+      className:'leaflet-div-icon',
+      html:`<div class="spawn-tip">
+        <div class="spawn-circle-map ${glowClass}" style="border-color:${color}">${s.animal.emoji}</div>
         <div class="spawn-lbl-map" style="background:${color}">${s.animal.name}</div>
         <div class="spawn-dist-map">${dist}m</div>
       </div>`,
-      iconSize: [64, 72], iconAnchor: [32, 72],
+      iconSize:[64,74],iconAnchor:[32,74],
     });
-    const marker = L.marker([s.lat, s.lng], { icon, zIndexOffset: dist <= 500 ? 500 : 100 });
-    marker.on('click', () => openModal(s));
+    const marker=L.marker([s.lat,s.lng],{icon,zIndexOffset:dist<=500?500:100});
+    marker.on('click',()=>openModal(s));
     spawnLayerGroup.addLayer(marker);
   }
   updateCameraView();
 }
 
-// ===== GPS with smoothing =====
-let gpsHistory = [];
-let lastUpdateLat = null, lastUpdateLng = null;
+// ===== GPS =====
+let gpsHistory=[],lastUpdateLat=null,lastUpdateLng=null;
 
-function smoothGPS(lat, lng, accuracy) {
-  const w = 1 / Math.max(accuracy || 50, 5);
-  gpsHistory.push({ lat, lng, w });
-  if (gpsHistory.length > 5) gpsHistory.shift();
-  const wTotal = gpsHistory.reduce((s, p) => s + p.w, 0);
-  return {
-    lat: gpsHistory.reduce((s, p) => s + p.lat * p.w, 0) / wTotal,
-    lng: gpsHistory.reduce((s, p) => s + p.lng * p.w, 0) / wTotal,
+function smoothGPS(lat,lng,accuracy){
+  const w=1/Math.max(accuracy||50,5);
+  gpsHistory.push({lat,lng,w});
+  if(gpsHistory.length>5)gpsHistory.shift();
+  const wTotal=gpsHistory.reduce((s,p)=>s+p.w,0);
+  return{
+    lat:gpsHistory.reduce((s,p)=>s+p.lat*p.w,0)/wTotal,
+    lng:gpsHistory.reduce((s,p)=>s+p.lng*p.w,0)/wTotal,
   };
 }
 
-function startLocation() {
-  if (!navigator.geolocation) { showToast('Kein GPS verfügbar'); return; }
-  navigator.geolocation.watchPosition(pos => {
-    const { latitude, longitude, accuracy } = pos.coords;
-    const smooth = smoothGPS(latitude, longitude, accuracy);
-
-    // Ignore updates smaller than 10 meters to prevent jitter
-    if (lastUpdateLat !== null) {
-      if (distM(lastUpdateLat, lastUpdateLng, smooth.lat, smooth.lng) < 10) return;
+function startLocation(){
+  if(!navigator.geolocation){showToast('Kein GPS verfügbar');return;}
+  navigator.geolocation.watchPosition(pos=>{
+    const{latitude,longitude,accuracy}=pos.coords;
+    const smooth=smoothGPS(latitude,longitude,accuracy);
+    if(lastUpdateLat!==null&&distM(lastUpdateLat,lastUpdateLng,smooth.lat,smooth.lng)<10)return;
+    state.lat=smooth.lat;state.lng=smooth.lng;
+    lastUpdateLat=smooth.lat;lastUpdateLng=smooth.lng;
+    if(!state.hasLocation){
+      state.hasLocation=true;
+      if(map)map.setView([smooth.lat,smooth.lng],16);
+    } else if(map){
+      map.panTo([smooth.lat,smooth.lng]);
     }
-    state.lat = smooth.lat;
-    state.lng = smooth.lng;
-    lastUpdateLat = smooth.lat;
-    lastUpdateLng = smooth.lng;
-
-    if (!state.hasLocation) {
-      state.hasLocation = true;
-      if (map) map.setView([smooth.lat, smooth.lng], 16);
-    } else if (map) {
-      map.panTo([smooth.lat, smooth.lng]);
-    }
-    if (playerMarker) playerMarker.setLatLng([smooth.lat, smooth.lng]);
-
-    const accStr = accuracy ? ` ±${Math.round(accuracy)}m` : '';
-    document.getElementById('coords').textContent =
-      `${smooth.lat.toFixed(4)}°N ${smooth.lng.toFixed(4)}°E${accStr}`;
+    if(playerMarker)playerMarker.setLatLng([smooth.lat,smooth.lng]);
+    const accStr=accuracy?` ±${Math.round(accuracy)}m`:'';
+    document.getElementById('coords').textContent=`${smooth.lat.toFixed(4)}°N ${smooth.lng.toFixed(4)}°E${accStr}`;
     refreshSpawns();
-  }, () => {
-    document.getElementById('coords').textContent = 'GPS nicht verfügbar';
-  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+  },()=>{
+    document.getElementById('coords').textContent='GPS nicht verfügbar';
+  },{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
 }
 
-// ===== MODAL =====
-let currentSpawn = null;
+// ===== SOUND SYSTEM =====
+let audioCtx=null;
 
-function openModal(spawn) {
-  currentSpawn = spawn;
-  const a = spawn.animal;
-  const dist = distM(state.lat, state.lng, spawn.lat, spawn.lng);
-  if (dist > 500) { showToast(`Zu weit weg! (${Math.round(dist)}m)`); return; }
-  const color = RARITY_COLOR[a.rar];
-  document.getElementById('modal-header').style.background = color;
-  document.getElementById('modal-rarity').textContent = RARITY_LABEL[a.rar];
-  document.getElementById('modal-cat').textContent = CAT_LABEL[a.cat];
-  document.getElementById('modal-emoji').textContent = a.emoji;
-  document.getElementById('modal-name').textContent = a.name;
-  document.getElementById('modal-sci').textContent = a.sci;
-  document.getElementById('modal-desc').textContent = a.desc;
-  document.getElementById('modal-size').textContent = a.size;
-  document.getElementById('modal-diet').textContent = a.diet;
-  document.getElementById('modal-fact').textContent = a.fact;
-  document.getElementById('btn-catch').style.background = color;
-  document.getElementById('modal-action').style.display = '';
-  document.getElementById('modal-result').style.display = 'none';
-  document.getElementById('modal-bg').classList.add('open');
+function getACtx(){
+  if(!audioCtx)try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+  return audioCtx;
 }
 
-function closeModal() {
-  document.getElementById('modal-bg').classList.remove('open');
-  currentSpawn = null;
+function playTone(freq,dur,vol,type='sine',delay=0){
+  const ctx=getACtx();if(!ctx)return;
+  try{
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type;o.frequency.setValueAtTime(freq,ctx.currentTime+delay);
+    g.gain.setValueAtTime(vol,ctx.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+dur);
+    o.connect(g);g.connect(ctx.destination);
+    o.start(ctx.currentTime+delay);o.stop(ctx.currentTime+delay+dur+.01);
+  }catch(e){}
+}
+
+function playSound(type){
+  switch(type){
+    case'hit':playTone(660,.1,.3,'triangle');playTone(900,.07,.15,'sine',.06);break;
+    case'success':[523,659,784,1047].forEach((f,i)=>playTone(f,.25,.22,'sine',i*.1));break;
+    case'escape':playTone(440,.15,.3,'sawtooth');playTone(330,.2,.22,'sawtooth',.15);playTone(220,.3,.18,'sawtooth',.3);break;
+    case'levelup':[523,659,784,1047,1319].forEach((f,i)=>playTone(f,.3,.2,'sine',i*.1));break;
+    case'discovery':[900,1200,1600,2000,2400].forEach((f,i)=>playTone(f,.1,.12,'sine',i*.07));break;
+  }
+}
+
+// ===== CATCH MINIGAME =====
+let catchGameData=null;
+
+function startCatchGame(spawn){
+  const a=spawn.animal;
+  const required={common:1,uncommon:2,rare:3,very_rare:4,legendary:5}[a.rar];
+  const timerMs=(8+required*2)*1000;
+  const moveMs={common:900,uncommon:750,rare:580,very_rare:450,legendary:360}[a.rar];
+
+  catchGameData={spawn,required,hits:0,moveInterval:null,timerInterval:null};
+
+  document.getElementById('catch-ov-emoji').textContent=a.emoji;
+  document.getElementById('catch-ov-name').textContent=a.name;
+  document.getElementById('catch-req').textContent=required;
+
+  const dots=document.getElementById('catch-dots');
+  dots.innerHTML='';
+  for(let i=0;i<required;i++){
+    const d=document.createElement('div');
+    d.className='catch-dot';d.id='cdot'+i;
+    dots.appendChild(d);
+  }
+
+  const bar=document.getElementById('catch-timer-bar');
+  bar.style.width='100%';bar.classList.remove('urgent');
+
+  const emoji=document.getElementById('catch-emoji-elem');
+  emoji.textContent=a.emoji;
+  emoji.style.filter=`drop-shadow(0 0 14px ${RARITY_COLOR[a.rar]})`;
+
+  document.getElementById('catch-overlay').classList.add('open');
+
+  // Position after layout
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    moveCatchEmoji();
+    catchGameData.moveInterval=setInterval(moveCatchEmoji,moveMs);
+  }));
+
+  const startTime=Date.now();
+  catchGameData.timerInterval=setInterval(()=>{
+    const rem=Math.max(0,timerMs-(Date.now()-startTime));
+    const pct=(rem/timerMs)*100;
+    bar.style.width=pct+'%';
+    if(pct<25)bar.classList.add('urgent');
+    if(rem<=0){stopCatchGame();animalEscaped();}
+  },50);
+}
+
+function moveCatchEmoji(){
+  const arena=document.getElementById('catch-arena');
+  const emoji=document.getElementById('catch-emoji-elem');
+  const maxX=Math.max(10,arena.offsetWidth-60);
+  const maxY=Math.max(10,arena.offsetHeight-60);
+  emoji.style.left=(4+Math.random()*maxX)+'px';
+  emoji.style.top=(4+Math.random()*maxY)+'px';
+}
+
+function hitCatchEmoji(){
+  if(!catchGameData)return;
+  catchGameData.hits++;
+  playSound('hit');
+  const dot=document.getElementById('cdot'+(catchGameData.hits-1));
+  if(dot)dot.classList.add('filled');
+  moveCatchEmoji();
+  if(catchGameData.hits>=catchGameData.required){stopCatchGame();completeCatch();}
+}
+
+function stopCatchGame(){
+  if(catchGameData){
+    clearInterval(catchGameData.moveInterval);
+    clearInterval(catchGameData.timerInterval);
+  }
+  document.getElementById('catch-overlay').classList.remove('open');
+}
+
+function animalEscaped(){
+  if(!currentSpawn)return;
+  playSound('escape');
+  currentSpawn.caught=true;
   renderSpawns();
+  document.getElementById('modal-action').style.display='none';
+  document.getElementById('modal-result').style.display='none';
+  document.getElementById('modal-escape').style.display='';
+  catchGameData=null;
 }
 
-function catchAnimal() {
-  if (!currentSpawn) return;
-  const a = currentSpawn.animal;
-  const isNew = !state.discovered[a.id];
-  const xpGain = a.xp * (isNew ? 2 : 1);
-  if (!state.discovered[a.id]) {
-    state.discovered[a.id] = {timesSeen:0, firstSeen:new Date().toISOString(), lastSeen:''};
+function completeCatch(){
+  if(!currentSpawn){closeModal();return;}
+  playSound('success');
+  const a=currentSpawn.animal;
+  const isNew=!state.discovered[a.id];
+  const xpGain=a.xp*(isNew?2:1);
+
+  if(!state.discovered[a.id]){
+    state.discovered[a.id]={timesSeen:0,firstSeen:new Date().toISOString(),lastSeen:''};
+    if(isNew)playSound('discovery');
   }
   state.discovered[a.id].timesSeen++;
-  state.discovered[a.id].lastSeen = new Date().toISOString();
-  state.profile.xp += xpGain;
+  state.discovered[a.id].lastSeen=new Date().toISOString();
+  state.profile.xp+=xpGain;
   state.profile.encounters++;
-  const lvl = calcLevel(state.profile.xp);
-  state.profile.level = lvl.level;
-  state.profile.xpNext = lvl.xpNext;
-  currentSpawn.caught = true;
-  const newAchs = checkAchievements();
-  saveState(); updateHUD(); updateCollection(); updateProfile();
-  document.getElementById('modal-action').style.display = 'none';
-  document.getElementById('modal-result').style.display = '';
-  document.getElementById('res-new').style.display = isNew ? '' : 'none';
-  document.getElementById('res-xp').textContent = `+${xpGain} XP`;
-  const achEl = document.getElementById('res-ach');
-  if (newAchs.length) { achEl.textContent = `🏆 ${newAchs[0].name} freigeschaltet!`; achEl.style.display = ''; }
-  else achEl.style.display = 'none';
+
+  state.recentSightings.unshift({animalId:a.id,date:new Date().toISOString(),isNew});
+  if(state.recentSightings.length>10)state.recentSightings.pop();
+
+  const prevLevel=state.profile.level;
+  const lvl=calcLevel(state.profile.xp);
+  state.profile.level=lvl.level;
+  state.profile.xpNext=lvl.xpNext;
+  currentSpawn.caught=true;
+
+  const newAchs=checkAchievements();
+  saveState();updateHUD();updateCollection();updateProfile();
+
+  if(lvl.level>prevLevel)showLevelUp(lvl.level);
+
+  document.getElementById('modal-action').style.display='none';
+  document.getElementById('modal-escape').style.display='none';
+  document.getElementById('modal-result').style.display='';
+  document.getElementById('res-new').style.display=isNew?'':'none';
+  document.getElementById('res-xp').textContent=`+${xpGain} XP`;
+  const achEl=document.getElementById('res-ach');
+  if(newAchs.length){achEl.textContent=`🏆 ${newAchs.map(x=>x.name).join(', ')} freigeschaltet!`;achEl.style.display='';}
+  else achEl.style.display='none';
+  catchGameData=null;
+}
+
+function skipCatch(){stopCatchGame();closeModal();}
+
+function showLevelUp(level){
+  const ov=document.getElementById('levelup-overlay');
+  document.getElementById('levelup-num').textContent=level;
+  ov.style.display='flex';ov.classList.add('show');
+  playSound('levelup');
+  setTimeout(()=>{ov.classList.remove('show');ov.style.display='none';},2800);
 }
 
 // ===== ACHIEVEMENTS =====
-function checkAchievements() {
-  const earned = [];
-  const discArr = Object.keys(state.discovered).map(id => ANIMALS.find(a=>a.id===id)).filter(Boolean);
-  for (const ach of ACHIEVEMENTS) {
-    if (state.profile.achievements.includes(ach.id)) continue;
-    let met = false;
-    if (ach.type==='discover') met = discArr.length >= ach.req;
-    else if (ach.type==='encounter') met = state.profile.encounters >= ach.req;
-    else if (ach.type==='cat') met = discArr.filter(a=>a.cat===ach.cat).length >= ach.req;
-    else if (ach.type==='rar') met = discArr.some(a=>a.rar===ach.rar);
-    if (met) { state.profile.achievements.push(ach.id); earned.push(ach); }
+function checkAchievements(){
+  const earned=[];
+  const discArr=Object.keys(state.discovered).map(id=>ANIMALS.find(a=>a.id===id)).filter(Boolean);
+  for(const ach of ACHIEVEMENTS){
+    if(state.profile.achievements.includes(ach.id))continue;
+    let met=false;
+    if(ach.type==='discover')met=discArr.length>=ach.req;
+    else if(ach.type==='encounter')met=state.profile.encounters>=ach.req;
+    else if(ach.type==='cat')met=discArr.filter(a=>a.cat===ach.cat).length>=ach.req;
+    else if(ach.type==='rar')met=discArr.some(a=>a.rar===ach.rar);
+    if(met){state.profile.achievements.push(ach.id);earned.push(ach);}
   }
   return earned;
 }
 
+// ===== MODAL =====
+let currentSpawn=null;
+
+function openModal(spawn){
+  currentSpawn=spawn;
+  const a=spawn.animal;
+  const dist=distM(state.lat,state.lng,spawn.lat,spawn.lng);
+  if(dist>500){showToast(`Zu weit weg! (${Math.round(dist)}m)`);return;}
+  const color=RARITY_COLOR[a.rar];
+  document.getElementById('modal-header').style.background=color;
+  document.getElementById('modal-rarity').textContent=RARITY_LABEL[a.rar];
+  document.getElementById('modal-cat').textContent=CAT_LABEL[a.cat];
+  document.getElementById('modal-emoji').textContent=a.emoji;
+  document.getElementById('modal-name').textContent=a.name;
+  document.getElementById('modal-sci').textContent=a.sci;
+  document.getElementById('modal-desc').textContent=a.desc;
+  document.getElementById('modal-size').textContent=a.size;
+  document.getElementById('modal-diet').textContent=a.diet;
+  document.getElementById('modal-fact').textContent=a.fact;
+  document.getElementById('btn-catch').style.background=color;
+  document.getElementById('modal-action').style.display='';
+  document.getElementById('modal-result').style.display='none';
+  document.getElementById('modal-escape').style.display='none';
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function closeModal(){
+  if(catchGameData){stopCatchGame();catchGameData=null;}
+  document.getElementById('modal-bg').classList.remove('open');
+  currentSpawn=null;
+  renderSpawns();
+}
+
+function catchAnimal(){
+  if(!currentSpawn)return;
+  startCatchGame(currentSpawn);
+}
+
 // ===== HUD =====
-function updateHUD() {
-  const lvl = calcLevel(state.profile.xp);
-  document.getElementById('hud-level').textContent = lvl.level;
-  document.getElementById('hud-xp').textContent = state.profile.xp;
-  document.getElementById('xp-fill').style.width = (lvl.xpProgress * 100) + '%';
-  document.getElementById('hud-disc').textContent = Object.keys(state.discovered).length;
+function updateHUD(){
+  const lvl=calcLevel(state.profile.xp);
+  document.getElementById('hud-level').textContent=lvl.level;
+  document.getElementById('hud-xp').textContent=state.profile.xp;
+  document.getElementById('xp-fill').style.width=(lvl.xpProgress*100)+'%';
+  document.getElementById('hud-disc').textContent=Object.keys(state.discovered).length;
+  const streak=state.profile.streak||1;
+  if(streak>1){
+    document.getElementById('hud-streak').style.display='';
+    document.getElementById('hud-streak-num').textContent=streak;
+  }
 }
 
 // ===== COLLECTION =====
-let activeFilter = 'all';
+let activeFilter='all';
 
-function updateCollection() {
-  const total = ANIMALS.length;
-  const found = Object.keys(state.discovered).length;
-  document.getElementById('coll-found').textContent = found;
-  document.getElementById('coll-total').textContent = total;
-  document.getElementById('coll-prog-fill').style.width = (found/total*100) + '%';
-  const fb = document.getElementById('filter-bar');
-  if (!fb.children.length) {
-    const cats = ['all',...[...new Set(ANIMALS.map(a=>a.cat))]];
-    const labels = {all:'🌍 Alle',bird:'🐦 Vögel',mammal:'🐾 Säugetiere',reptile:'🦎 Reptilien',amphibian:'🐸 Amphibien',insect:'🦋 Insekten',fish:'🐟 Fische'};
-    cats.forEach(c => {
-      const btn = document.createElement('button');
-      btn.className = 'filter-chip' + (c==='all'?' active':'');
-      btn.textContent = labels[c]||c;
-      btn.onclick = () => { activeFilter=c; document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderGrid(); };
+function updateCollection(){
+  const total=ANIMALS.length,found=Object.keys(state.discovered).length;
+  document.getElementById('coll-found').textContent=found;
+  document.getElementById('coll-total').textContent=total;
+  document.getElementById('coll-prog-fill').style.width=(found/total*100)+'%';
+  const fb=document.getElementById('filter-bar');
+  if(!fb.children.length){
+    const cats=['all',...[...new Set(ANIMALS.map(a=>a.cat))]];
+    const labels={all:'🌍 Alle',bird:'🐦 Vögel',mammal:'🐾 Säugetiere',reptile:'🦎 Reptilien',amphibian:'🐸 Amphibien',insect:'🦋 Insekten',fish:'🐟 Fische'};
+    cats.forEach(c=>{
+      const btn=document.createElement('button');
+      btn.className='filter-chip'+(c==='all'?' active':'');
+      btn.textContent=labels[c]||c;
+      btn.onclick=()=>{activeFilter=c;document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderGrid();};
       fb.appendChild(btn);
     });
   }
   renderGrid();
 }
 
-function renderGrid() {
-  const grid = document.getElementById('animal-grid');
-  grid.innerHTML = '';
-  const filtered = activeFilter==='all' ? ANIMALS : ANIMALS.filter(a=>a.cat===activeFilter);
-  filtered.forEach(a => {
-    const disc = state.discovered[a.id];
-    const color = RARITY_COLOR[a.rar];
-    const card = document.createElement('div');
-    card.className = 'animal-card' + (disc?'':' undiscovered');
-    card.innerHTML = `<div class="rarity-stripe" style="background:${color}"></div>
+function renderGrid(){
+  const grid=document.getElementById('animal-grid');
+  grid.innerHTML='';
+  const filtered=activeFilter==='all'?ANIMALS:ANIMALS.filter(a=>a.cat===activeFilter);
+  const now=Date.now();
+  filtered.forEach(a=>{
+    const disc=state.discovered[a.id];
+    const color=RARITY_COLOR[a.rar];
+    const isRecent=disc&&(now-new Date(disc.firstSeen).getTime())<86400000;
+    const card=document.createElement('div');
+    card.className='animal-card rar-'+a.rar+(disc?'':' undiscovered');
+    card.innerHTML=`<div class="rarity-stripe" style="background:${color}"></div>
+      ${isRecent?'<div class="card-new-badge">NEU</div>':''}
       <div class="card-emoji">${disc?a.emoji:'❓'}</div>
       <div class="card-name">${disc?a.name:'???'}</div>
-      ${disc?`<div class="card-seen">${disc.timesSeen}x</div>`:''}`;
-    card.onclick = () => openDetail(a);
+      ${disc?`<div class="card-seen">${disc.timesSeen}×</div>`:''}`;
+    card.onclick=()=>openDetail(a);
     grid.appendChild(card);
   });
 }
 
 // ===== DETAIL VIEW =====
-function openDetail(a) {
-  const disc = state.discovered[a.id];
-  const color = RARITY_COLOR[a.rar];
-  const habLabels = {forest:'🌲 Wald',meadow:'🌿 Wiese',water:'💧 Gewässer',urban:'🏘️ Stadt',mountain:'⛰️ Gebirge',wetland:'🌊 Feuchtgebiet'};
-  const timeLabels = {dawn:'🌅 Morgengrauen',day:'☀️ Tag',dusk:'🌇 Dämmerung',night:'🌙 Nacht'};
-  const seasonLabels = {spring:'🌸 Frühling',summer:'☀️ Sommer',autumn:'🍂 Herbst',winter:'❄️ Winter'};
-  let html = `<div class="detail-hero" style="background:${color}20">
+function openDetail(a){
+  const disc=state.discovered[a.id];
+  const color=RARITY_COLOR[a.rar];
+  const habLabels={forest:'🌲 Wald',meadow:'🌿 Wiese',water:'💧 Gewässer',urban:'🏘️ Stadt',mountain:'⛰️ Gebirge',wetland:'🌊 Feuchtgebiet'};
+  const timeLabels={dawn:'🌅 Morgengrauen',day:'☀️ Tag',dusk:'🌇 Dämmerung',night:'🌙 Nacht'};
+  const seasonLabels={spring:'🌸 Frühling',summer:'☀️ Sommer',autumn:'🍂 Herbst',winter:'❄️ Winter'};
+  let html=`<div class="detail-hero" style="background:${color}20">
     <div class="detail-emoji">${disc?a.emoji:'❓'}</div>
     <div class="detail-name" style="color:${disc?'var(--text)':'#aaa'}">${disc?a.name:'???'}</div>
     ${disc?`<div class="detail-sci">${a.sci}</div>`:''}
+    <div style="margin-top:6px;display:inline-block;background:${color};color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:50px">${RARITY_LABEL[a.rar]}</div>
   </div><div class="detail-body">`;
-  if (disc) {
-    html += `<p class="detail-desc">${a.desc}</p>
+  if(disc){
+    html+=`<p class="detail-desc">${a.desc}</p>
     <div class="info-grid">
       <div class="info-card"><div class="info-lbl">Kategorie</div><div class="info-val">${CAT_EMOJI[a.cat]} ${CAT_LABEL[a.cat]}</div></div>
       <div class="info-card"><div class="info-lbl">Seltenheit</div><div class="info-val" style="color:${color}">${RARITY_LABEL[a.rar]}</div></div>
@@ -780,60 +1009,85 @@ function openDetail(a) {
     </div>
     <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid var(--border)">
       <div class="section-title">Deine Beobachtungen</div>
-      <p class="hint-txt">Gesehen: ${disc.timesSeen}x</p>
+      <p class="hint-txt">Gesehen: ${disc.timesSeen}×</p>
       <p class="hint-txt">Erstmals: ${new Date(disc.firstSeen).toLocaleDateString('de-DE')}</p>
     </div>`;
   } else {
-    html += `<p style="font-size:16px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:16px">Dieses Tier hast du noch nicht entdeckt!</p>
+    html+=`<p style="font-size:16px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:16px">Dieses Tier hast du noch nicht entdeckt!</p>
     <div class="hint-box">
-      <div class="section-title">Hinweise</div>
+      <div class="section-title">Wo & wann zu finden</div>
       <p class="hint-txt">Lebensraum: ${a.hab.map(h=>habLabels[h]).join(', ')}</p>
       <p class="hint-txt">Aktiv: ${a.time.map(t=>timeLabels[t]).join(', ')}</p>
       <p class="hint-txt">Saison: ${a.seasons.map(s=>seasonLabels[s]).join(', ')}</p>
     </div>`;
   }
-  html += `<div class="section-title" style="margin-top:16px">Lebensraum</div>
+  html+=`<div class="section-title" style="margin-top:16px">Lebensraum</div>
     <div class="tag-row">${a.hab.map(h=>`<div class="tag">${habLabels[h]}</div>`).join('')}</div>
     </div>`;
-  document.getElementById('detail-content').innerHTML = html;
+  document.getElementById('detail-content').innerHTML=html;
   document.getElementById('detail-view').classList.add('open');
 }
 
-function closeDetail() {
-  document.getElementById('detail-view').classList.remove('open');
-}
+function closeDetail(){document.getElementById('detail-view').classList.remove('open');}
 
 // ===== PROFILE =====
-function updateProfile() {
-  const lvl = calcLevel(state.profile.xp);
-  document.getElementById('prof-level').textContent = lvl.level;
-  document.getElementById('prof-xp-fill').style.width = (lvl.xpProgress * 100) + '%';
-  document.getElementById('prof-xp-cur').textContent = state.profile.xp + ' XP';
-  document.getElementById('prof-xp-next').textContent = `Noch ${lvl.xpNext} XP bis Level ${lvl.level+1}`;
-  document.getElementById('prof-date').textContent = 'Dabei seit ' + new Date(state.profile.startDate).toLocaleDateString('de-DE');
-  document.getElementById('ps-disc').textContent = Object.keys(state.discovered).length;
-  document.getElementById('ps-enc').textContent = state.profile.encounters;
-  document.getElementById('ps-ach').textContent = state.profile.achievements.length;
-  document.getElementById('ps-xp').textContent = state.profile.xp;
-  const discArr = Object.keys(state.discovered).map(id => ANIMALS.find(a=>a.id===id)).filter(Boolean);
-  const cats = ['bird','mammal','reptile','amphibian','insect','fish'];
-  const catProg = document.getElementById('cat-progress');
-  catProg.innerHTML = '';
-  cats.forEach(c => {
-    const total = ANIMALS.filter(a=>a.cat===c).length;
-    const found = discArr.filter(a=>a.cat===c).length;
-    catProg.innerHTML += `<div class="cat-row">
+function updateProfile(){
+  const lvl=calcLevel(state.profile.xp);
+  document.getElementById('prof-level').textContent=lvl.level;
+  document.getElementById('prof-xp-fill').style.width=(lvl.xpProgress*100)+'%';
+  document.getElementById('prof-xp-cur').textContent=state.profile.xp+' XP';
+  document.getElementById('prof-xp-next').textContent=`Noch ${lvl.xpNext} XP bis Level ${lvl.level+1}`;
+  document.getElementById('prof-date').textContent='Dabei seit '+new Date(state.profile.startDate).toLocaleDateString('de-DE');
+  document.getElementById('ps-disc').textContent=Object.keys(state.discovered).length;
+  document.getElementById('ps-enc').textContent=state.profile.encounters;
+  document.getElementById('ps-ach').textContent=state.profile.achievements.length;
+  document.getElementById('ps-xp').textContent=state.profile.xp;
+
+  const streak=state.profile.streak||1;
+  document.getElementById('streak-num').textContent=streak;
+  document.getElementById('streak-plural').textContent=streak===1?'':'e';
+
+  const discArr=Object.keys(state.discovered).map(id=>ANIMALS.find(a=>a.id===id)).filter(Boolean);
+
+  // Recent sightings
+  const sightList=document.getElementById('sight-list');
+  const sightings=state.recentSightings||[];
+  if(!sightings.length){
+    sightList.innerHTML='<p style="font-size:14px;color:var(--text2)">Noch keine Sichtungen</p>';
+  } else {
+    sightList.innerHTML=sightings.map(s=>{
+      const a=ANIMALS.find(x=>x.id===s.animalId);
+      if(!a)return'';
+      const d=new Date(s.date);
+      const ts=d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+      return`<div class="sight-row">
+        <div class="sight-emoji">${a.emoji}</div>
+        <div class="sight-info"><div class="sight-name">${a.name}</div><div class="sight-time">${ts}</div></div>
+        ${s.isNew?'<span class="sight-new">NEU</span>':''}
+      </div>`;
+    }).join('');
+  }
+
+  // Category progress
+  const catProg=document.getElementById('cat-progress');
+  catProg.innerHTML='';
+  ['bird','mammal','reptile','amphibian','insect','fish'].forEach(c=>{
+    const total=ANIMALS.filter(a=>a.cat===c).length;
+    const found=discArr.filter(a=>a.cat===c).length;
+    catProg.innerHTML+=`<div class="cat-row">
       <div class="cat-emoji">${CAT_EMOJI[c]}</div>
       <div class="cat-info">
         <div class="cat-top"><span class="cat-name">${CAT_LABEL_PL[c]}</span><span class="cat-count">${found}/${total}</span></div>
         <div class="cat-bar"><div class="cat-fill" style="width:${total?found/total*100:0}%"></div></div>
       </div></div>`;
   });
-  const achList = document.getElementById('ach-list');
-  achList.innerHTML = '';
-  ACHIEVEMENTS.forEach(ach => {
-    const earned = state.profile.achievements.includes(ach.id);
-    achList.innerHTML += `<div class="ach-row ${earned?'':'locked'}">
+
+  // Achievements
+  const achList=document.getElementById('ach-list');
+  achList.innerHTML='';
+  ACHIEVEMENTS.forEach(ach=>{
+    const earned=state.profile.achievements.includes(ach.id);
+    achList.innerHTML+=`<div class="ach-row ${earned?'':'locked'}">
       <div class="ach-icon">${earned?ach.icon:'🔒'}</div>
       <div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div></div>
       ${earned?'<span>✅</span>':''}
@@ -842,91 +1096,84 @@ function updateProfile() {
 }
 
 // ===== CAMERA =====
-function startCamera() {
-  document.getElementById('cam-perm').style.display = 'none';
-  const constraints = {
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-    audio: false,
-  };
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(stream => {
-      const video = document.getElementById('camera-video');
-      video.srcObject = stream;
-      video.style.display = 'block';
-      // Explicit play() needed for iOS Safari
-      video.play().catch(() => {});
-      state.cameraActive = true;
-      updateCameraView();
+function startCamera(){
+  document.getElementById('cam-perm').style.display='none';
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})
+    .then(stream=>{
+      const video=document.getElementById('camera-video');
+      video.srcObject=stream;video.style.display='block';
+      video.play().catch(()=>{});
+      state.cameraActive=true;updateCameraView();
     })
-    .catch(() => {
-      document.getElementById('cam-perm').style.display = '';
+    .catch(()=>{
+      document.getElementById('cam-perm').style.display='';
       showToast('Kamera-Zugriff verweigert');
     });
 }
 
-function updateCameraView() {
-  const nearby = state.spawns.filter(s => !s.caught && s.despawn > Date.now() &&
-    distM(state.lat, state.lng, s.lat, s.lng) <= 200);
-  document.getElementById('cam-sub').textContent = `${nearby.length} ${nearby.length===1?'Tier':'Tiere'} in der Nähe`;
-  const arArea = document.getElementById('ar-animals');
-  arArea.innerHTML = '';
-  document.getElementById('no-animals-msg').style.display = nearby.length ? 'none' : '';
-  const W = window.innerWidth, H = window.innerHeight;
-  nearby.forEach((s, i) => {
-    const angle = (i / Math.max(nearby.length, 1)) * Math.PI * 2;
-    const r = Math.min(W, H) * 0.28;
-    const x = W/2 + Math.cos(angle) * r;
-    const y = H/2 + Math.sin(angle) * r;
-    const color = RARITY_COLOR[s.animal.rar];
-    const el = document.createElement('div');
-    el.className = 'ar-animal';
-    el.style.cssText = `left:${x-28}px;top:${y-28}px`;
-    el.innerHTML = `<div class="ar-circle" style="border-color:${color}">${s.animal.emoji}</div>
-      <div class="ar-lbl" style="background:${color}">${s.animal.name}</div>`;
-    el.onclick = () => openModal(s);
+function updateCameraView(){
+  const nearby=state.spawns.filter(s=>!s.caught&&s.despawn>Date.now()&&distM(state.lat,state.lng,s.lat,s.lng)<=200);
+  document.getElementById('cam-sub').textContent=`${nearby.length} ${nearby.length===1?'Tier':'Tiere'} in der Nähe`;
+  const arArea=document.getElementById('ar-animals');
+  arArea.innerHTML='';
+  document.getElementById('no-animals-msg').style.display=nearby.length?'none':'';
+  const W=window.innerWidth,H=window.innerHeight;
+  nearby.forEach((s,i)=>{
+    const angle=(i/Math.max(nearby.length,1))*Math.PI*2-Math.PI/2;
+    const r=Math.min(W,H)*.3;
+    const x=W/2+Math.cos(angle)*r;
+    const y=H/2+Math.sin(angle)*r;
+    const color=RARITY_COLOR[s.animal.rar];
+    const dist=Math.round(distM(state.lat,state.lng,s.lat,s.lng));
+    const el=document.createElement('div');
+    el.className='ar-animal';
+    el.style.cssText=`left:${x-30}px;top:${y-30}px`;
+    el.innerHTML=`<div class="ar-circle" style="border-color:${color}">${s.animal.emoji}</div>
+      <div class="ar-lbl" style="background:${color}">${s.animal.name}</div>
+      <div class="ar-dist">${dist}m</div>`;
+    el.onclick=()=>openModal(s);
     arArea.appendChild(el);
   });
 }
 
 // ===== TAB NAVIGATION =====
-function switchTab(name, btn) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+function switchTab(name,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(name+'-screen').classList.add('active');
   btn.classList.add('active');
-  if (name === 'map') {
-    setTimeout(() => {
-      if (!map) initMap();
-      else map.invalidateSize();
+  if(name==='map'){
+    setTimeout(()=>{
+      if(!map)initMap();else map.invalidateSize();
       renderSpawns();
-    }, 50);
+    },50);
   }
-  if (name === 'coll') updateCollection();
-  if (name === 'prof') updateProfile();
-  if (name === 'cam' && !state.cameraActive) {
-    document.getElementById('cam-perm').style.display = '';
-    document.getElementById('camera-video').style.display = 'none';
+  if(name==='coll')updateCollection();
+  if(name==='prof')updateProfile();
+  if(name==='cam'&&!state.cameraActive){
+    document.getElementById('cam-perm').style.display='';
+    document.getElementById('camera-video').style.display='none';
   }
 }
 
 // ===== TOAST =====
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
 // ===== INIT =====
 loadState();
+checkDailyStreak();
 updateHUD();
 updateCollection();
 updateProfile();
-// Init map after DOM is ready (map-screen is active by default)
-window.addEventListener('load', () => {
+window.addEventListener('load',()=>{
   initMap();
   startLocation();
-  setTimeout(refreshSpawns, 800);
+  setTimeout(refreshSpawns,800);
+  setInterval(refreshSpawns,90000);
 });
 </script>
 </body>
